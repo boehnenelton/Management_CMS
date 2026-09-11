@@ -1,0 +1,71 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "Media"
+  ],
+  "Fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "filename",
+      "type": "string"
+    },
+    {
+      "name": "original_path",
+      "type": "string"
+    },
+    {
+      "name": "mime_type",
+      "type": "string"
+    },
+    {
+      "name": "file_hash",
+      "type": "string"
+    },
+    {
+      "name": "webp_path",
+      "type": "string"
+    },
+    {
+      "name": "alt_text",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    },
+    {
+      "name": "admin_media_id",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "0aa2b9df-30d6-4588-b861-fe74f6956df9",
+      "1000744483.png",
+      "Content/media/uploads/1000744483.png",
+      "image/png",
+      "f8ced8a4bd63db8521681664eeeb7d64673865701a25fb7e4f0926c3ba4aa86d",
+      "",
+      "",
+      "2026-07-31T11:26:20Z",
+      ""
+    ],
+    [
+      "18f22d05-9b45-44ce-922f-5502fad9a189",
+      "1000754777.webp",
+      "Content/media/uploads/1000754777.webp",
+      "image/webp",
+      "8a57455ba2acf9207c58b1124b5a710ad13c8fa172ca171760525cd5c996a5d8",
+      "",
+      "",
+      "2026-07-31T11:49:46Z",
+      ""
+    ]
+  ]
+}

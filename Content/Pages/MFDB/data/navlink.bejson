@@ -1,0 +1,65 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "NavLink"
+  ],
+  "Fields": [
+    {
+      "name": "nav_id",
+      "type": "string"
+    },
+    {
+      "name": "parent_id",
+      "type": "string"
+    },
+    {
+      "name": "nav_label",
+      "type": "string"
+    },
+    {
+      "name": "nav_url",
+      "type": "string"
+    },
+    {
+      "name": "nav_target",
+      "type": "string"
+    },
+    {
+      "name": "nav_position",
+      "type": "integer"
+    },
+    {
+      "name": "nav_active",
+      "type": "boolean"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "857dc05a-a883-407e-a301-0ba4505b90f6",
+      null,
+      "Contact Page Test",
+      "/Contact-Page-Test.html",
+      "_self",
+      0,
+      true,
+      "2026-07-31T11:26:55Z"
+    ],
+    [
+      "a8578620-37ed-4ce3-b148-15bbc1481e63",
+      null,
+      "About Page Test",
+      "/About-Page-Test.html",
+      "_self",
+      1,
+      true,
+      "2026-07-31T11:27:05Z"
+    ]
+  ]
+}

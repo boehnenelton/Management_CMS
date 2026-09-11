@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Management_CMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* AUDIT FIX (L-8): oklch() had no preceding hex fallback — on a browser
+     that doesn't parse oklch(), a custom property is a plain string, and
+     an unparseable value fails silently at the point of computation
+     (var(--primary) in a real declaration), not here. Declaring the hex
+     value FIRST and the oklch() value second uses the standard
+     custom-property fallback pattern: a browser that can't parse the
+     oklch() line drops that one declaration and keeps the hex one from
+     the line above, cascade-order-wins-when-valid. Matches the public-site
+     skeletons, which already stick to hex #DE2626 for the same reason. */
+  --primary:#DE2626;--primary-hover:#c01f1f;
+  --primary:oklch(65% 0.2 25);--primary-hover:oklch(58% 0.2 25);
+  --bg-page:#fff;--bg-alt:#f5f5f5;--bg-alt-2:#ececec;--border:#e2e2e2;
+  --text-main:#000;--text-muted:#777;
+  --font-sans:'Inter',system-ui,sans-serif;--font-mono:'Source Code Pro',monospace;
+  --radius:6px;--sidebar-width:220px;--header-height:50px;--toolbar-height:42px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.05);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-main);display:flex;flex-direction:column}
+
+/* HEADER — block: becss-header */
+.becss-header{height:var(--header-height);border-bottom:1px solid var(--border);display:flex;
+  align-items:center;padding:0 .9rem;gap:.7rem;flex-shrink:0;z-index:50}
+.becss-hamburger{display:none;background:none;border:none;cursor:pointer;padding:.25rem;color:var(--text-main);line-height:0}
+.becss-header__title{font-size:.9rem;font-weight:700;letter-spacing:-.02em}
+.becss-header__version{font-size:.68rem;color:var(--text-muted);font-family:var(--font-mono)}
+
+/* SHELL — block: becss-shell */
+.becss-shell{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR — block: becss-sidebar */
+.becss-sidebar{width:var(--sidebar-width);flex-shrink:0;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;background:var(--bg-page);overflow-y:auto}
+.becss-sidebar__nav{padding:.6rem .4rem;display:flex;flex-direction:column;gap:.1rem}
+.becss-nav-item{display:flex;align-items:center;gap:.55rem;padding:.5rem .7rem;
+  border-radius:var(--radius);border:none;background:none;cursor:pointer;
+  font-family:var(--font-sans);font-size:.82rem;font-weight:500;color:var(--text-main);
+  width:100%;text-align:left;transition:background .1s}
+.becss-nav-item:hover{background:var(--bg-alt)}
+.becss-nav-item--active{background:var(--primary);color:#fff}
+.becss-nav-item__icon{font-size:.95rem;width:1.1rem;text-align:center;flex-shrink:0}
+.becss-sidebar__footer{margin-top:auto;padding:.65rem .75rem;border-top:1px solid var(--border);
+  font-size:.67rem;color:var(--text-muted);line-height:1.6}
+
+/* MAIN — block: becss-main */
+.becss-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* TOOLBAR — block: becss-toolbar */
+.becss-toolbar{height:var(--toolbar-height);flex-shrink:0;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.4rem;padding:0 .9rem;overflow-x:auto;white-space:nowrap}
+.becss-toolbar::-webkit-scrollbar{display:none}
+.becss-toolbar__btn{display:inline-flex;align-items:center;gap:.3rem;padding:.28rem .65rem;
+  border-radius:var(--radius);border:1px solid var(--border);background:var(--bg-page);
+  font-family:var(--font-sans);font-size:.75rem;font-weight:500;cursor:pointer;
+  color:var(--text-main);white-space:nowrap;transition:background .1s,border-color .1s}
+.becss-toolbar__btn:hover{background:var(--bg-alt);border-color:#bbb}
+.becss-toolbar__btn--primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.becss-toolbar__btn--primary:hover{background:var(--primary-hover)}
+.becss-toolbar__btn--danger:hover{background:#fff0f0;border-color:var(--primary);color:var(--primary)}
+.becss-toolbar__separator{width:1px;height:20px;background:var(--border);flex-shrink:0;margin:0 .1rem}
+
+/* CONTENT — block: becss-content / becss-panel */
+.becss-content{flex:1;overflow-y:auto;padding:1.25rem 1.4rem}
+.becss-panel{display:none}.becss-panel--active{display:block}
+
+/* SECTION HEAD */
+.becss-section-header{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-muted);margin-bottom:.9rem;padding-bottom:.3rem;border-bottom:1px solid var(--border)}
+
+/* LINK CARDS */
+.becss-category-section{margin-bottom:1.6rem}
+.becss-category-section__label{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-muted);margin-bottom:.55rem;display:flex;align-items:center;gap:.5rem}
+.becss-category-section__label::after{content:'';flex:1;height:1px;background:var(--border)}
+.becss-link-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.5rem}
+.becss-link-card{background:var(--bg-page);border:1px solid var(--border);border-radius:var(--radius);
+  padding:.7rem .9rem;display:flex;flex-direction:column;gap:.25rem;position:relative;
+  transition:border-color .12s}
+.becss-link-card:hover{border-color:#aaa}
+.becss-link-card__head{display:flex;align-items:center;gap:.45rem}
+.becss-link-card__icon{font-size:.95rem;flex-shrink:0}
+.becss-link-card__title{font-size:.83rem;font-weight:600}
+.becss-link-card__url{font-size:.68rem;color:var(--text-muted);font-family:var(--font-mono);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.becss-link-card__desc{font-size:.75rem;color:var(--text-muted);line-height:1.4}
+
+/* CARD ACTIONS (shared: link-card, note-card) */
+.becss-card__actions{position:absolute;top:.4rem;right:.4rem;display:flex;gap:.2rem;
+  opacity:0;transition:opacity .12s}
+.becss-link-card:hover .becss-card__actions,.becss-note-card:hover .becss-card__actions{opacity:1}
+.becss-card__action-btn{width:22px;height:22px;border-radius:3px;border:1px solid var(--border);
+  background:var(--bg-page);cursor:pointer;font-size:.65rem;
+  display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all .1s}
+.becss-card__action-btn--edit:hover{border-color:#3b82f6;color:#3b82f6;background:#eff6ff}
+.becss-card__action-btn--delete:hover{border-color:var(--primary);color:var(--primary);background:#fff0f0}
+
+/* ── FILTER BAR (shared: links/notes/todos) ── */
+.becss-filter-bar{
+  display:flex;align-items:center;gap:.35rem;
+  padding:.5rem 0 .75rem;overflow-x:auto;white-space:nowrap;
+}
+.becss-filter-bar::-webkit-scrollbar{display:none}
+.becss-filter-bar__tab{padding:.22rem .65rem;border-radius:20px;border:1px solid var(--border);
+  background:var(--bg-page);font-family:var(--font-sans);font-size:.74rem;font-weight:500;
+  cursor:pointer;color:var(--text-muted);transition:all .1s;white-space:nowrap}
+.becss-filter-bar__tab:hover{border-color:#aaa;color:var(--text-main)}
+.becss-filter-bar__tab--active{background:var(--primary);border-color:var(--primary);color:#fff}
+.becss-filter-bar__separator{width:1px;height:14px;background:var(--border);flex-shrink:0}
+
+/* NOTE CARDS */
+.becss-notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.8rem}
+.becss-note-card{border-radius:var(--radius);padding:1rem 1.1rem;border:1px solid var(--border);position:relative}
+.becss-note-card__title{font-size:.85rem;font-weight:700;margin-bottom:.35rem}
+.becss-note-card__badge{display:inline-block;font-size:.65rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.05em;padding:.1rem .4rem;border-radius:3px;
+  background:rgba(0,0,0,.06);color:var(--text-muted);margin-bottom:.35rem}
+.becss-note-card__body{font-size:.8rem;color:#444;line-height:1.55;white-space:pre-wrap}
+
+/* ── TODO LIST ── */
+.becss-todo-list{display:flex;flex-direction:column;gap:.35rem;max-width:700px}
+.becss-todo-item{border:1px solid var(--border);border-radius:var(--radius);border-left-width:3px;
+  background:var(--bg-page);overflow:hidden;transition:border-color .12s}
+.becss-todo-item--priority-high  {border-left-color:var(--primary)}
+.becss-todo-item--priority-medium{border-left-color:#e8a020}
+.becss-todo-item--priority-low   {border-left-color:#bbb}
+.becss-todo-item--done .becss-todo-item__label{text-decoration:line-through;color:var(--text-muted);opacity:.7}
+
+/* Todo header row — the clickable part */
+.becss-todo-item__header{display:flex;align-items:center;gap:.65rem;padding:.5rem .85rem;cursor:pointer;
+  user-select:none;-webkit-user-select:none}
+.becss-todo-item__checkbox{width:15px;height:15px;cursor:pointer;accent-color:var(--primary);flex-shrink:0}
+.becss-todo-item__label{flex:1;font-size:.83rem}
+.becss-todo-item__badge{font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+  padding:.12rem .4rem;border-radius:3px;background:var(--bg-alt);color:var(--text-muted);flex-shrink:0}
+.becss-todo-item--priority-high   .becss-todo-item__badge{background:#fef2f2;color:var(--primary)}
+.becss-todo-item--priority-medium .becss-todo-item__badge{background:#fffbeb;color:#b45309}
+.becss-todo-item__arrow{font-size:.65rem;color:var(--text-muted);flex-shrink:0;
+  transition:transform .15s;line-height:1}
+.becss-todo-item--expanded .becss-todo-item__arrow{transform:rotate(90deg)}
+.becss-todo-item__actions{display:flex;gap:.2rem;flex-shrink:0}
+
+/* Todo detail body — collapsed by default */
+.becss-todo-item__detail{
+  display:none;padding:.55rem .85rem .75rem;
+  border-top:1px solid var(--border);background:var(--bg-alt);
+}
+.becss-todo-item--expanded .becss-todo-item__detail{display:block}
+.becss-todo-item__detail-label{font-size:.68rem;font-weight:600;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem}
+.becss-todo-item__textarea{
+  width:100%;min-height:80px;resize:vertical;padding:.4rem .55rem;
+  border:1px solid var(--border);border-radius:var(--radius);
+  font-family:var(--font-mono);font-size:.78rem;background:#fff;color:#000;
+  transition:border-color .1s;
+}
+.becss-todo-item__textarea:focus{outline:none;border-color:var(--primary)}
+.becss-todo-item__save-btn{margin-top:.4rem;padding:.25rem .65rem;border-radius:var(--radius);
+  border:1px solid var(--border);background:var(--bg-page);font-family:var(--font-sans);
+  font-size:.73rem;cursor:pointer;color:var(--text-main);transition:background .1s}
+.becss-todo-item__save-btn:hover{background:var(--bg-alt-2);border-color:#aaa}
+
+/* BUILD */
+.becss-build-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:860px}
+.becss-build-card{border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem}
+.becss-build-card h3{font-size:.82rem;font-weight:600;margin-bottom:.7rem}
+.becss-build-card__stat-list{display:flex;flex-direction:column;gap:.35rem}
+.becss-build-card__stat-row{display:flex;justify-content:space-between;align-items:center;font-size:.8rem}
+.becss-build-card__stat-value{font-family:var(--font-mono);font-size:.78rem;font-weight:700;color:var(--primary)}
+.becss-build-card__note{font-size:.78rem;color:var(--text-muted);line-height:1.55;margin-bottom:.75rem}
+.becss-build-card__actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.becss-build-card__log{margin-top:.8rem;padding:.6rem .8rem;border-radius:var(--radius);
+  background:var(--bg-alt);font-family:var(--font-mono);font-size:.72rem;
+  color:var(--text-muted);border:1px solid var(--border);min-height:2rem}
+
+/* SETTINGS */
+.becss-settings-list{display:flex;flex-direction:column;gap:.5rem;max-width:560px}
+.becss-settings-list__row{display:flex;justify-content:space-between;align-items:center;
+  border:1px solid var(--border);border-radius:var(--radius);padding:.55rem .85rem;gap:1rem}
+.becss-settings-list__label{font-size:.8rem;font-weight:500}
+.becss-settings-list__desc{font-size:.7rem;color:var(--text-muted);margin-top:.1rem}
+.becss-settings-list__input{padding:.28rem .55rem;border:1px solid var(--border);border-radius:4px;
+  font-family:var(--font-sans);font-size:.8rem;background:#fff;color:#000;min-width:130px;text-align:right}
+.becss-settings-list__input[type=checkbox]{min-width:auto;width:15px;height:15px;cursor:pointer;accent-color:var(--primary)}
+.becss-settings-list__input[type=color]{padding:.1rem .2rem;width:46px;height:26px;cursor:pointer;min-width:auto}
+
+/* MODAL */
+.becss-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;
+  display:none;align-items:center;justify-content:center;padding:1rem}
+.becss-modal-overlay--open{display:flex}
+.becss-modal{background:var(--bg-page);border:1px solid var(--border);border-radius:9px;
+  padding:1.35rem;width:100%;max-width:440px;box-shadow:0 8px 30px rgba(0,0,0,.1)}
+.becss-modal__title{font-size:.9rem;font-weight:700;margin-bottom:.9rem}
+.becss-form__group{display:flex;flex-direction:column;gap:.25rem;margin-bottom:.65rem}
+.becss-form__label{font-size:.74rem;font-weight:600;color:var(--text-muted)}
+.becss-form__input,.becss-form__select,.becss-form__textarea{padding:.4rem .6rem;border:1px solid var(--border);
+  border-radius:var(--radius);font-family:var(--font-sans);font-size:.82rem;
+  background:#fff;color:#000;width:100%}
+.becss-form__textarea{resize:vertical;min-height:80px;font-family:var(--font-mono);font-size:.77rem}
+.becss-modal__actions{display:flex;justify-content:flex-end;gap:.4rem;margin-top:.4rem}
+.becss-btn{padding:.35rem .85rem;border-radius:var(--radius);border:1px solid var(--border);
+  font-family:var(--font-sans);font-size:.8rem;font-weight:500;cursor:pointer;
+  background:var(--bg-page);color:var(--text-main);transition:background .1s}
+.becss-btn:hover{background:var(--bg-alt)}
+.becss-btn--primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.becss-btn--primary:hover{background:var(--primary-hover)}
+
+/* COLOUR SWATCHES */
+.becss-swatch-list{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.25rem}
+.becss-swatch-list__swatch{width:22px;height:22px;border-radius:3px;cursor:pointer;border:2px solid transparent}
+.becss-swatch-list__swatch--selected{border-color:var(--primary)}
+
+/* TOAST */
+.becss-toast{position:fixed;bottom:1rem;right:1rem;z-index:500;padding:.5rem .9rem;
+  border-radius:var(--radius);font-size:.8rem;font-weight:500;background:#111;color:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);transform:translateY(.8rem);opacity:0;
+  transition:all .18s;pointer-events:none}
+.becss-toast--show{transform:translateY(0);opacity:1}
+.becss-toast--ok{background:#166534}.becss-toast--err{background:var(--primary)}
+
+/* EMPTY */
+.becss-empty-state{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-size:.82rem}
+.becss-empty-state__icon{font-size:1.8rem;margin-bottom:.4rem}
+
+/* DRAG-AND-DROP TREES (Categories/Nav) */
+.becss-tree-row{display:flex;align-items:center;gap:.4rem;padding:.35rem .5rem;border-radius:5px;
+  cursor:grab;border:2px solid transparent;user-select:none}
+.becss-tree-row:active{cursor:grabbing}
+.becss-tree-row--dragging{opacity:.35}
+.becss-tree-row--drop-before{box-shadow:inset 0 2px 0 0 #DE2626}
+.becss-tree-row--drop-after{box-shadow:inset 0 -2px 0 0 #DE2626}
+.becss-tree-row--drop-inside{background:rgba(222,38,38,.15);border-color:#DE2626}
+.becss-tree-drag-handle{color:var(--text-muted);font-size:.8rem;cursor:grab;padding:0 .15rem}
+.becss-tree-toplevel-zone{border:2px dashed var(--border);border-radius:6px;padding:.5rem;
+  text-align:center;font-size:.72rem;color:var(--text-muted);margin-bottom:.6rem}
+.becss-tree-toplevel-zone--dragover{border-color:#DE2626;color:#DE2626;background:rgba(222,38,38,.08)}
+
+/* SITE PREVIEW OVERLAY (Build panel) */
+.becss-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;
+  display:none;align-items:center;justify-content:center;padding:1rem}
+.becss-preview-overlay--open{display:flex}
+.becss-preview{background:var(--bg-page);border:1px solid var(--border);border-radius:9px;
+  width:100%;max-width:1000px;height:90vh;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.becss-preview__bar{display:flex;align-items:center;justify-content:space-between;
+  padding:.5rem .75rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.becss-preview__title{font-size:.82rem;font-weight:700}
+.becss-preview__close-btn{background:none;border:none;cursor:pointer;font-size:1.1rem;
+  color:var(--text-muted);padding:.15rem .4rem;border-radius:3px;line-height:1}
+.becss-preview__close-btn:hover{background:var(--bg-alt);color:var(--text-main)}
+.becss-preview__frame{flex:1;border:none;width:100%;background:#fff}
+
+/* MEDIA PICKER OVERLAY (Pages/Posts featured image — select from library instead of typing a URL) */
+.becss-mediapicker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:350;
+  display:none;align-items:center;justify-content:center;padding:1rem}
+.becss-mediapicker-overlay--open{display:flex}
+.becss-mediapicker{background:var(--bg-page);border:1px solid var(--border);border-radius:9px;
+  padding:1.2rem;width:100%;max-width:560px;max-height:80vh;display:flex;flex-direction:column;
+  box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.becss-mediapicker__title{font-size:.88rem;font-weight:700;margin-bottom:.7rem;
+  display:flex;justify-content:space-between;align-items:center}
+.becss-mediapicker__close-btn{background:none;border:none;cursor:pointer;font-size:1rem;
+  color:var(--text-muted);padding:.1rem .3rem;border-radius:3px}
+.becss-mediapicker__close-btn:hover{background:var(--bg-alt);color:var(--text-main)}
+.becss-mediapicker__upload-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;
+  padding-bottom:.8rem;border-bottom:1px solid var(--border)}
+.becss-mediapicker__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+  gap:.5rem;overflow-y:auto;flex:1;padding:.1rem}
+.becss-mediapicker__item{cursor:pointer;border:2px solid transparent;border-radius:6px;
+  overflow:hidden;background:var(--bg-alt);transition:border-color .12s;text-align:center}
+.becss-mediapicker__item:hover{border-color:#DE2626}
+.becss-mediapicker__item img{width:100%;height:72px;object-fit:cover;display:block;background:#000}
+.becss-mediapicker__item-name{font-size:.62rem;padding:.2rem .25rem;color:var(--text-muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* CAT MANAGER OVERLAY (notes/links/todos) */
+.becss-catmgr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;
+  display:none;align-items:center;justify-content:center;padding:1rem}
+.becss-catmgr-overlay--open{display:flex}
+.becss-catmgr{background:var(--bg-page);border:1px solid var(--border);border-radius:9px;
+  padding:1.2rem;width:100%;max-width:360px;box-shadow:0 8px 30px rgba(0,0,0,.1)}
+.becss-catmgr__title{font-size:.88rem;font-weight:700;margin-bottom:.8rem;
+  display:flex;justify-content:space-between;align-items:center}
+.becss-catmgr__close-btn{background:none;border:none;cursor:pointer;font-size:1rem;
+  color:var(--text-muted);padding:.1rem .3rem;border-radius:3px}
+.becss-catmgr__close-btn:hover{background:var(--bg-alt);color:var(--text-main)}
+.becss-catmgr__list{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.8rem;
+  max-height:220px;overflow-y:auto}
+.becss-catmgr__item{display:flex;align-items:center;gap:.4rem;padding:.35rem .5rem;
+  border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-page)}
+.becss-catmgr__name{flex:1;font-size:.82rem}
+/* AUDIT FIX (L-7): was a descendant selector (`.becss-catmgr__item input`)
+   expecting an <input> nested inside a .becss-catmgr__item wrapper, but
+   startEditCat() below applies "becss-catmgr__item" and "input" as flat
+   classes directly on the same <input> element — so this rule never
+   matched. Changed to a same-element compound selector to match how the
+   classes are actually applied. */
+.becss-catmgr__item.input{flex:1;font-size:.82rem;padding:.15rem .3rem;border:1px solid var(--border);
+  border-radius:3px;font-family:var(--font-sans)}
+.becss-catmgr__add-row{display:flex;gap:.4rem}
+.becss-catmgr__add-input{flex:1;padding:.35rem .55rem;border:1px solid var(--border);
+  border-radius:var(--radius);font-family:var(--font-sans);font-size:.82rem;background:#fff}
+.becss-catmgr__add-input:focus{outline:none;border-color:var(--primary)}
+
+/* MOBILE */
+.becss-sidebar__overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:90}
+@media(max-width:700px){
+  :root{--sidebar-width:230px}
+  .becss-hamburger{display:flex}
+  .becss-sidebar{position:fixed;left:0;top:var(--header-height);bottom:0;z-index:100;
+    transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 14px rgba(0,0,0,.07)}
+  .becss-sidebar--open{transform:translateX(0)}
+  .becss-sidebar__overlay--open{display:block}
+  .becss-build-grid{grid-template-columns:1fr}
+  .becss-content{padding:1rem}
+}
+</style>
+</head>
+<body>
+
+<div id="toast" class="becss-toast"></div>
+
+<!-- Standard modal -->
+<div id="modalOv" class="becss-modal-overlay">
+  <div class="becss-modal">
+    <div class="becss-modal__title" id="modalTitle"></div>
+    <div id="modalBody"></div>
+    <div class="becss-modal__actions">
+      <button class="becss-btn" onclick="closeModal()">Cancel</button>
+      <button class="becss-btn becss-btn--primary" id="modalSaveBtn" onclick="handleSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Site preview overlay (Build panel) -->
+<div id="previewOv" class="becss-preview-overlay">
+  <div class="becss-preview">
+    <div class="becss-preview__bar">
+      <span class="becss-preview__title">Site Preview</span>
+      <button class="becss-preview__close-btn" onclick="closePreview()">✕</button>
+    </div>
+    <iframe id="previewFrame" class="becss-preview__frame"></iframe>
+  </div>
+</div>
+
+<!-- Media library picker overlay (Pages/Posts featured image) -->
+<div id="mediaPickerOv" class="becss-mediapicker-overlay">
+  <div class="becss-mediapicker">
+    <div class="becss-mediapicker__title">
+      Select Media
+      <button class="becss-mediapicker__close-btn" onclick="closeMediaPicker()">✕</button>
+    </div>
+    <div class="becss-filter-bar">
+      <button class="becss-filter-bar__tab becss-filter-bar__tab--active" id="mpTab-uploads" onclick="_setMediaPickerTab('uploads')">Uploads</button>
+      <button class="becss-filter-bar__tab" id="mpTab-youtube" onclick="_setMediaPickerTab('youtube')">YouTube</button>
+      <button class="becss-filter-bar__tab" id="mpTab-external_image" onclick="_setMediaPickerTab('external_image')">Image Links</button>
+    </div>
+
+    <div id="mpPane-uploads" class="becss-mediapicker__upload-row">
+      <input type="file" id="mediaPickerUploadInput" accept="image/*" style="flex:1;font-size:.78rem">
+      <button class="becss-btn becss-btn--primary" onclick="_mediaPickerUploadAndSelect()">⬆ Upload &amp; Use</button>
+    </div>
+
+    <div id="mpPane-youtube" class="becss-mediapicker__upload-row" style="display:none">
+      <input class="becss-form__input" id="mpYoutubeUrl" placeholder="https://www.youtube.com/watch?v=…" style="flex:2">
+      <input class="becss-form__input" id="mpYoutubeTitle" placeholder="Label (optional)" style="flex:1">
+      <button class="becss-btn becss-btn--primary" onclick="_mediaPickerAddExternal('youtube')">＋ Add</button>
+    </div>
+
+    <div id="mpPane-external_image" class="becss-mediapicker__upload-row" style="display:none">
+      <input class="becss-form__input" id="mpImageUrl" placeholder="https://example.com/image.jpg" style="flex:2">
+      <input class="becss-form__input" id="mpImageAlt" placeholder="Alt text (optional)" style="flex:1">
+      <button class="becss-btn becss-btn--primary" onclick="_mediaPickerAddExternal('external_image')">＋ Add</button>
+    </div>
+
+    <div class="becss-mediapicker__grid" id="mediaPickerGrid"></div>
+  </div>
+</div>
+
+<!-- Note category manager overlay -->
+<div id="catMgrOv" class="becss-catmgr-overlay">
+  <div class="becss-catmgr">
+    <div class="becss-catmgr__title">
+      Manage Categories
+      <button class="becss-catmgr__close-btn" onclick="closeCatMgr()">✕</button>
+    </div>
+    <div class="becss-catmgr__list" id="catMgrList"></div>
+    <div class="becss-catmgr__add-row">
+      <input class="becss-catmgr__add-input" id="catMgrNewName" placeholder="New category name…"
+             onkeydown="if(event.key==='Enter')addCat()">
+      <button class="becss-btn becss-btn--primary" onclick="addCat()">Add</button>
+    </div>
+  </div>
+</div>
+
+<header class="becss-header">
+  <button class="becss-hamburger" onclick="toggleSidebar()" aria-label="Menu">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+      <rect y="2" width="18" height="2" rx="1"/><rect y="8" width="18" height="2" rx="1"/>
+      <rect y="14" width="18" height="2" rx="1"/>
+    </svg>
+  </button>
+  <span class="becss-header__title">Management_CMS</span>
+  <span class="becss-header__version">v{{ version }}</span>
+</header>
+
+<div class="becss-sidebar__overlay" id="sidebarOv" onclick="closeSidebar()"></div>
+
+<div class="becss-shell">
+  <nav class="becss-sidebar" id="sidebar">
+    <div class="becss-sidebar__nav">
+      <button class="becss-nav-item becss-nav-item--active" onclick="go('links',this)"><span class="becss-nav-item__icon">🔗</span>Links</button>
+      <button class="becss-nav-item" onclick="go('notes',this)"><span class="becss-nav-item__icon">📝</span>Notes</button>
+      <button class="becss-nav-item" onclick="go('todos',this)"><span class="becss-nav-item__icon">✅</span>To-Do</button>
+      <button class="becss-nav-item" onclick="go('pages',this)"><span class="becss-nav-item__icon">📄</span>Pages</button>
+      <button class="becss-nav-item" onclick="go('posts',this)"><span class="becss-nav-item__icon">📰</span>Posts</button>
+      <button class="becss-nav-item" onclick="go('categories',this)"><span class="becss-nav-item__icon">🗃</span>Categories</button>
+      <button class="becss-nav-item" onclick="go('navmenu',this)"><span class="becss-nav-item__icon">🧭</span>Site Nav</button>
+      <button class="becss-nav-item" onclick="go('build',this)"><span class="becss-nav-item__icon">🏗</span>Build</button>
+      <button class="becss-nav-item" onclick="go('settings',this)"><span class="becss-nav-item__icon">⚙️</span>Settings</button>
+    </div>
+    <div class="becss-sidebar__footer">Elton Boehnen<br>eltonboehnen@gmail.com<br>boehnenelton2024.pages.dev</div>
+  </nav>
+
+  <main class="becss-main">
+    <nav class="becss-toolbar" id="toolbar"></nav>
+    <div class="becss-content">
+      <div class="becss-panel becss-panel--active" id="panel-links"><div id="linksOut"></div></div>
+      <div class="becss-panel"        id="panel-notes"><div id="notesOut"></div></div>
+      <div class="becss-panel"        id="panel-todos"><div id="todosOut"></div></div>
+      <div class="becss-panel"        id="panel-pages"><div id="pagesOut"></div></div>
+      <div class="becss-panel"        id="panel-posts"><div id="postsOut"></div></div>
+      <div class="becss-panel"        id="panel-categories"><div id="categoriesOut"></div></div>
+      <div class="becss-panel"        id="panel-navmenu"><div id="navmenuOut"></div></div>
+      <div class="becss-panel"        id="panel-build"><div id="buildOut"></div></div>
+      <div class="becss-panel"        id="panel-settings"><div id="settingsOut"></div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+"use strict";
+// AUDIT FIX (H-1, round 2): the token is no longer server-rendered into
+// this page — round 1's inlining made "/" (unauthenticated by necessity)
+// a free source of the token, defeating the whole gate. Held only in
+// sessionStorage now (cleared when the tab closes), populated by the
+// login prompt below after a round-trip through /api/auth/check.
+var ADMIN_TOKEN = sessionStorage.getItem("mgmt_cms_admin_token") || "";
+var P = "links", editTarget = null, _cfgRaw = [];
+var _noteFilter = "__all__";   // active notes category filter
+var _noteCats   = [];          // [{cat_id, cat_name}] — refreshed with loadNotes
+var _linkFilter = "__all__";
+var _linkCats   = [];
+var _todoFilter = "__all__";
+var _todoCats   = [];
+var CAT_ENDPOINTS = {notes:"note-categories", links:"link-categories", todos:"task-categories"};
+var _catMgrKind = "notes";
+
+/* ── utils ── */
+function toast(msg, type) {
+  var el = document.getElementById("toast");
+  el.textContent = msg; el.className = "becss-toast becss-toast--show becss-toast--" + (type||"ok");
+  clearTimeout(el._t); el._t = setTimeout(function(){ el.className="becss-toast"; }, 2600);
+}
+
+/* ── login gate (AUDIT FIX H-1, round 2) ──────────────────────────
+   "/" ships with no token embedded. On first load (or whenever a call
+   comes back 401) this prompts for the token — read it from the server
+   console at startup, or from config/admin_token.txt — verifies it
+   against /api/auth/check (which also sets the same-site "admin_token"
+   cookie used for the two GET-only nav cases: preview iframe, download
+   link), then stores it in sessionStorage for the rest of the tab's
+   life. Nothing here writes the token into the DOM outside the input
+   field itself, and nothing sends it as a URL query parameter. */
+function _showLoginGate(message){
+  var ov = document.getElementById("authGateOv");
+  if (ov){ if(message) document.getElementById("authGateMsg").textContent = message; ov.style.display="flex"; return; }
+  ov = document.createElement("div");
+  ov.id = "authGateOv";
+  ov.style.cssText = "position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:9999;";
+  ov.innerHTML =
+    '<div style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:1.75rem;max-width:360px;width:90%;">'
+    +'<h2 style="margin:0 0 .5rem;color:#fff;font-size:1.1rem;">Management_CMS — Admin Token</h2>'
+    +'<p id="authGateMsg" style="color:#999;font-size:.85rem;margin:0 0 1rem;">'+(message||'Find the admin token in config/admin_token.txt (the server console/log prints that file\'s path at startup, not the token value itself).')+'</p>'
+    +'<input id="authGateInput" type="password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:.5rem .6rem;background:#000;border:1px solid #2a2a2a;border-radius:4px;color:#fff;font-family:monospace;margin-bottom:.75rem;">'
+    +'<button id="authGateBtn" class="becss-btn becss-btn--primary" style="width:100%;">Unlock</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  var submit = async function(){
+    var val = document.getElementById("authGateInput").value.trim();
+    if (!val) return;
+    var r = await fetch("/api/auth/check", {method:"GET", headers:{"X-Admin-Token":val}});
+    if (r.ok){
+      ADMIN_TOKEN = val;
+      sessionStorage.setItem("mgmt_cms_admin_token", val);
+      ov.style.display = "none";
+      renderToolbar("links"); loadLinks();
+    } else {
+      document.getElementById("authGateMsg").textContent = "Invalid token — try again.";
+      document.getElementById("authGateMsg").style.color = "#ff6b6b";
+    }
+  };
+  document.getElementById("authGateBtn").addEventListener("click", submit);
+  document.getElementById("authGateInput").addEventListener("keydown", function(e){ if(e.key==="Enter") submit(); });
+  if (message) document.getElementById("authGateMsg").style.color = "#ff6b6b";
+}
+async function api(method, url, body) {
+  var o = {method:method, headers:{"Content-Type":"application/json", "X-Admin-Token":ADMIN_TOKEN}};
+  if (body !== undefined) o.body = JSON.stringify(body);
+  var r = await fetch(url, o);
+  if (r.status === 401){
+    sessionStorage.removeItem("mgmt_cms_admin_token");
+    _showLoginGate("Session expired or invalid — enter the admin token again.");
+    return {error: "Unauthorized", unauthorized: true};
+  }
+  var d = await r.json();
+  if (!r.ok && !d.error) d.error = "HTTP "+r.status;
+  return d;
+}
+// AUDIT FIX (H-1, round 2): the round-1 withToken() helper put the token
+// in a URL query string for the two GET-only navigations that can't set a
+// custom header (preview iframe, download link) — that leaks into server
+// logs and browser history, flagged in the round-2 audit. Both call sites
+// now rely on the "admin_token" cookie set by /api/auth/check instead
+// (browsers attach cookies to same-origin GET navigations automatically),
+// so no URL-rewriting helper is needed at all — removed.
+function esc(s) {
+  // SECURITY FIX (Audit item 1, 2026-07-21): previously only encoded &, <, >, "
+  // — a user-controlled string containing a single quote or backtick could
+  // still break out of onclick="...('...')" single-quoted JS-string args or
+  // backtick template-literal contexts elsewhere in this file, even though
+  // it was fully HTML-entity-safe. Now encodes ' and ` as well. This closes
+  // the specific breakout vectors identified in the audit; it is still a
+  // plain character-substitution filter, not a context-aware DOM sanitizer —
+  // the durable fix is migrating the onclick="fn('"+esc(x)+"')" call sites
+  // to addEventListener + dataset attributes so untrusted data never enters
+  // a JS-string context at all. Tracked in CHECKLIST.md item 1b.
+  return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;").replace(/`/g,"&#96;");
+}
+
+// AUDIT FIX (M-8): scheduled_at timezone. A <input type="datetime-local">
+// (used for the post scheduling field) holds a bare local wall-clock
+// string with NO timezone marker at all — never a "Z" or offset, by the
+// HTML spec. That raw value used to be sent straight to the server as
+// scheduled_at and compared against management_cms_shared_now_iso()'s
+// UTC "...Z" timestamps in lib_bejson_Management_content.py's
+// management_cms_content_list_due_for_publish() — string-compared as if
+// it WERE already UTC. In any timezone behind UTC, a post scheduled for
+// "2:00 PM local" would auto-publish hours before 2pm actually arrived;
+// ahead of UTC, it'd publish hours late. These two helpers convert in
+// both directions at the UI boundary, so everything server-side keeps
+// working with real UTC timestamps and nothing there needed to change.
+function _localDatetimeInputToIso(localStr){
+  if (!localStr) return "";
+  var d = new Date(localStr);  // bare "YYYY-MM-DDTHH:MM" parses as browser-local time per spec
+  if (isNaN(d.getTime())) return "";
+  return d.toISOString().replace(/\.\d{3}Z$/, "Z");  // match management_cms_shared_now_iso()'s no-milliseconds format
+}
+function _isoToLocalDatetimeInput(iso){
+  if (!iso) return "";
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  var pad = function(n){ return String(n).padStart(2,"0"); };
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
+}
+
+/* ── nav ── */
+function go(name, btn) {
+  document.querySelectorAll(".becss-panel").forEach(function(p){p.classList.remove("becss-panel--active");});
+  document.querySelectorAll(".becss-nav-item").forEach(function(b){b.classList.remove("becss-nav-item--active");});
+  document.getElementById("panel-"+name).classList.add("becss-panel--active");
+  if (btn) btn.classList.add("becss-nav-item--active");
+  P = name; closeModal(); closeSidebar(); renderToolbar(name); loadPanel(name);
+}
+function toggleSidebar(){
+  document.getElementById("sidebar").classList.toggle("becss-sidebar--open");
+  document.getElementById("sidebarOv").classList.toggle("becss-sidebar__overlay--open");
+}
+function closeSidebar(){
+  document.getElementById("sidebar").classList.remove("becss-sidebar--open");
+  document.getElementById("sidebarOv").classList.remove("becss-sidebar__overlay--open");
+}
+
+/* ── toolbar ── */
+function renderToolbar(panel) {
+  var t = {
+    links:    '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddLink()">＋ Link</button>'
+              +'<button class="becss-toolbar__btn" onclick="openCatMgr(\'links\')">🗂 Categories</button>'
+              +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadLinks()">↻</button>',
+    notes:    '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddNote()">＋ Note</button>'
+              +'<button class="becss-toolbar__btn" onclick="openCatMgr(\'notes\')">🗂 Categories</button>'
+              +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadNotes()">↻</button>',
+    todos:    '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddTodo()">＋ Task</button>'
+              +'<button class="becss-toolbar__btn" onclick="openCatMgr(\'todos\')">🗂 Categories</button><div class="becss-toolbar__separator"></div>'
+              +'<button class="becss-toolbar__btn" onclick="loadTodos()">↻</button>'
+              +'<button class="becss-toolbar__btn becss-toolbar__btn--danger" onclick="clearDone()">✕ Clear done</button>',
+    build:    '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="buildPage()">🏗 Build</button>'
+              +'<button class="becss-toolbar__btn" onclick="openPreview()">👁 Preview</button>'
+              +'<button class="becss-toolbar__btn" onclick="downloadPage()">⬇ Download</button>'
+              +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadBuild()">↻</button>',
+    settings: '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="saveSettings()">💾 Save</button>',
+    pages:    '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddPage()">＋ Page</button>'
+              +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadPages()">↻</button>',
+    posts:    '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddPost()">＋ Post</button>'
+              +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadPosts()">↻</button>',
+    categories: '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddCategory()">＋ Category</button>'
+              +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadCategories()">↻</button>',
+    navmenu:  '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddNavItem()">＋ Nav Item</button>'
+              +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadNavMenu()">↻</button>',
+  };
+  document.getElementById("toolbar").innerHTML = t[panel] || "";
+}
+function loadPanel(name) {
+  ({links:loadLinks, notes:loadNotes, todos:loadTodos, build:loadBuild, settings:loadSettings,
+    pages:loadPages, posts:loadPosts, categories:loadCategories, navmenu:loadNavMenu})[name]();
+}
+
+/* ══ LINKS ══════════════════════════════════════════════════ */
+async function loadLinks() {
+  var el = document.getElementById("linksOut");
+  var d = await api("GET","/api/links");
+  _linkCats = d.link_categories || [];
+  var links = d.links || [];
+
+  var filterBar='<div class="becss-filter-bar">'
+    +'<button class="becss-filter-bar__tab'+(_linkFilter==="__all__"?" becss-filter-bar__tab--active":"")
+    +'" onclick="setLinkFilter(\'__all__\',this)">All</button>'
+    +'<div class="becss-filter-bar__separator"></div>'
+    +_linkCats.map(function(c){
+      return '<button class="becss-filter-bar__tab'+(_linkFilter===c.cat_id?" becss-filter-bar__tab--active":"")
+        +'" onclick="setLinkFilter(\''+c.cat_id+'\',this)">'+esc(c.cat_name)+'</button>';
+    }).join('')
+    +'</div>';
+
+  var visible = _linkFilter==="__all__" ? links : links.filter(function(l){ return l.category===_linkFilter; });
+
+  if (!links.length) { el.innerHTML = filterBar+empty("🔗","No links yet"); return; }
+  if (!visible.length) { el.innerHTML = filterBar+empty("🔗","No links in this category"); return; }
+
+  var catLookup={}; _linkCats.forEach(function(c){catLookup[c.cat_id]=c.cat_name;});
+
+  el.innerHTML = filterBar+'<div class="becss-link-grid">'
+    +visible.map(function(l) {
+      var badge = l.category&&catLookup[l.category]
+        ? '<div class="becss-note-card__badge">'+esc(catLookup[l.category])+'</div>' : '';
+      return '<div class="becss-link-card">'
+        +'<div class="becss-card__actions">'
+        +'<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="editLink(\''+l.link_id+'\')" title="Edit">✎</button>'
+        +'<button class="becss-card__action-btn becss-card__action-btn--delete"  onclick="delLink(\''+l.link_id+'\')"  title="Del">✕</button>'
+        +'</div>'
+        +badge
+        +'<div class="becss-link-card__head">'+(l.icon?'<span class="becss-link-card__icon">'+esc(l.icon)+'</span>':'')
+        +'<span class="becss-link-card__title">'+esc(l.title)+'</span></div>'
+        +'<div class="becss-link-card__url">'+esc(l.url)+'</div>'
+        +(l.description?'<div class="becss-link-card__desc">'+esc(l.description)+'</div>':'')
+        +'</div>';
+    }).join('')+'</div>';
+}
+function setLinkFilter(val, btn){
+  _linkFilter=val;
+  // AUDIT FIX (M-3): was unscoped querySelectorAll(".becss-filter-bar__tab")
+  // across the ENTIRE document, so filtering links also stripped the
+  // active-state class off the media picker's mpTab-* tabs (they reuse the
+  // same class). Scoped to #linksOut, matching the pattern
+  // setPostStatusFilter/setCatTypeFilter already use correctly.
+  document.querySelectorAll("#linksOut .becss-filter-bar__tab").forEach(function(b){b.classList.remove("becss-filter-bar__tab--active");});
+  if(btn) btn.classList.add("becss-filter-bar__tab--active");
+  loadLinks();
+}
+function linkForm(l) {
+  l=l||{};
+  var catOptions='<option value="">— Uncategorized —</option>'
+    +_linkCats.map(function(c){
+      return '<option value="'+c.cat_id+'"'+(l.category===c.cat_id?" selected":"")+'>'+esc(c.cat_name)+'</option>';
+    }).join('');
+  return fg("Title *",'<input class="becss-form__input" id="lf_title" value="'+esc(l.title||'')+'" placeholder="GitHub">')
+    +fg("URL *",'<input class="becss-form__input" id="lf_url" value="'+esc(l.url||'')+'" placeholder="https://">')
+    +fg("Category",'<select class="becss-form__select" id="lf_cat">'+catOptions+'</select>')
+    +fg("Icon",'<input class="becss-form__input" id="lf_icon" value="'+esc(l.icon||'')+'" placeholder="🌐">')
+    +fg("Description",'<input class="becss-form__input" id="lf_desc" value="'+esc(l.description||'')+'" placeholder="Optional">');
+}
+function openAddLink(){ editTarget=null; openModal("Add Link",linkForm({})); }
+async function editLink(id){
+  var d=await api("GET","/api/links");
+  var l=(d.links||[]).find(function(x){return x.link_id===id;});
+  if(!l){toast("Not found","err");return;}
+  editTarget={type:"link",id:id}; openModal("Edit Link",linkForm(l));
+}
+async function saveLinkModal(){
+  var title=(document.getElementById("lf_title").value||"").trim();
+  var url=(document.getElementById("lf_url").value||"").trim();
+  if(!title||!url){toast("Title and URL required","err");return;}
+  var catEl=document.getElementById("lf_cat");
+  var body={title:title,url:url,
+    category:catEl&&catEl.value?catEl.value:null,
+    icon:(document.getElementById("lf_icon").value||"").trim(),
+    description:(document.getElementById("lf_desc").value||"").trim()};
+  var d=editTarget?await api("PUT","/api/links/"+editTarget.id,body):await api("POST","/api/links",body);
+  if(d.ok){toast(editTarget?"Link updated":"Link added");closeModal();loadLinks();}
+  else toast(d.error||"Error","err");
+}
+async function delLink(id){
+  if(!confirm("Delete link?"))return;
+  var d=await api("DELETE","/api/links/"+id);
+  if(d.ok){toast("Deleted");loadLinks();}else toast(d.error||"Error","err");
+}
+
+/* ══ CATEGORIES (generic — notes/links/todos) ══════════════════ */
+function openCatMgr(kind){
+  _catMgrKind = kind;
+  loadCatMgrList();
+  document.getElementById("catMgrOv").classList.add("becss-catmgr-overlay--open");
+}
+function closeCatMgr(){ document.getElementById("catMgrOv").classList.remove("becss-catmgr-overlay--open"); }
+document.getElementById("catMgrOv").addEventListener("click", function(e){
+  if(e.target===this) closeCatMgr();
+});
+
+function reloadCurrentPanelData(){
+  if(_catMgrKind==="notes") loadNotes();
+  else if(_catMgrKind==="links") loadLinks();
+  else if(_catMgrKind==="todos") loadTodos();
+}
+
+async function loadCatMgrList(){
+  var d = await api("GET","/api/"+CAT_ENDPOINTS[_catMgrKind]);
+  var cats = d.categories || [];
+  if(_catMgrKind==="notes") _noteCats=cats;
+  else if(_catMgrKind==="links") _linkCats=cats;
+  else if(_catMgrKind==="todos") _todoCats=cats;
+  var el = document.getElementById("catMgrList");
+  if(!cats.length){
+    el.innerHTML='<div style="font-size:.78rem;color:var(--text-muted);padding:.25rem 0">No categories yet</div>';
+    return;
+  }
+  el.innerHTML = cats.map(function(c){
+    return '<div class="becss-catmgr__item" id="cmrow-'+c.cat_id+'">'
+      +'<span class="becss-catmgr__name" id="cmname-'+c.cat_id+'">'+esc(c.cat_name)+'</span>'
+      +'<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="startEditCat(\''+c.cat_id+'\',\''+esc(c.cat_name)+'\')" title="Rename">✎</button>'
+      +'<button class="becss-card__action-btn becss-card__action-btn--delete"  onclick="deleteCat(\''+c.cat_id+'\')" title="Delete">✕</button>'
+      +'</div>';
+  }).join('');
+}
+function startEditCat(cid, currentName){
+  var row = document.getElementById("cmrow-"+cid);
+  row.innerHTML='<input class="becss-catmgr__item input" id="cmedit-'+cid+'" value="'+esc(currentName)+'">'
+    +'<button class="becss-btn becss-btn--primary" style="font-size:.72rem;padding:.2rem .5rem" onclick="saveEditCat(\''+cid+'\')">Save</button>'
+    +'<button class="becss-btn" style="font-size:.72rem;padding:.2rem .5rem" onclick="loadCatMgrList()">✕</button>';
+  var inp = document.getElementById("cmedit-"+cid);
+  if(inp){ inp.focus(); inp.select();
+    inp.addEventListener("keydown",function(e){if(e.key==="Enter")saveEditCat(cid);}); }
+}
+async function saveEditCat(cid){
+  var el=document.getElementById("cmedit-"+cid);
+  var name=(el?el.value:"").trim();
+  if(!name){toast("Name required","err");return;}
+  var d=await api("PUT","/api/"+CAT_ENDPOINTS[_catMgrKind]+"/"+cid,{cat_name:name});
+  if(d.ok){toast("Renamed");loadCatMgrList();reloadCurrentPanelData();}
+  else toast(d.error||"Error","err");
+}
+async function deleteCat(cid){
+  if(!confirm("Delete category? Items in it become Uncategorized."))return;
+  var d=await api("DELETE","/api/"+CAT_ENDPOINTS[_catMgrKind]+"/"+cid);
+  if(d.ok){toast("Deleted");loadCatMgrList();reloadCurrentPanelData();}
+  else toast(d.error||"Error","err");
+}
+async function addCat(){
+  var name=(document.getElementById("catMgrNewName").value||"").trim();
+  if(!name){toast("Enter a name","err");return;}
+  var d=await api("POST","/api/"+CAT_ENDPOINTS[_catMgrKind],{cat_name:name});
+  if(d.ok){
+    document.getElementById("catMgrNewName").value="";
+    toast("Category added");loadCatMgrList();reloadCurrentPanelData();
+  } else toast(d.error||"Error","err");
+}
+
+/* ══ NOTES ══════════════════════════════════════════════════ */
+var NOTE_COLS=["#f5f5f5","#fef9c3","#d1fae5","#dbeafe","#fce7f3","#ede9fe"];
+
+async function loadNotes(){
+  var el=document.getElementById("notesOut");
+  var d=await api("GET","/api/notes");
+  _noteCats = d.categories || [];
+  var notes  = d.notes || [];
+
+  /* ── filter bar ── */
+  var filterBar='<div class="becss-filter-bar">'
+    +'<button class="becss-filter-bar__tab'+(_noteFilter==="__all__"?" becss-filter-bar__tab--active":"")
+    +'" onclick="setNoteFilter(\'__all__\',this)">All</button>'
+    +'<div class="becss-filter-bar__separator"></div>'
+    +_noteCats.map(function(c){
+      return '<button class="becss-filter-bar__tab'+(_noteFilter===c.cat_id?" becss-filter-bar__tab--active":"")
+        +'" onclick="setNoteFilter(\''+c.cat_id+'\',this)">'+esc(c.cat_name)+'</button>';
+    }).join('')
+    +'</div>';
+
+  /* ── filter notes ── */
+  var visible = _noteFilter==="__all__"
+    ? notes
+    : notes.filter(function(n){ return n.note_category===_noteFilter; });
+
+  if(!notes.length){
+    el.innerHTML=filterBar+empty("📝","No notes yet");return;
+  }
+  if(!visible.length){
+    el.innerHTML=filterBar+empty("📝","No notes in this category");return;
+  }
+
+  /* ── build cat lookup for badge display ── */
+  var catLookup={};
+  _noteCats.forEach(function(c){catLookup[c.cat_id]=c.cat_name;});
+
+  el.innerHTML=filterBar+'<div class="becss-notes-grid">'
+    +visible.map(function(n){
+      // AUDIT FIX (M-2): esc() blocks HTML-breakout, but this value lands
+      // in a CSS `style="background:…"` attribute — a different context
+      // esc() was never designed to sanitize (e.g. `expression(...)` /
+      // stray `;`+extra declarations in older engines, or simply
+      // non-color garbage). The swatch palette (NOTE_COLS) is a known,
+      // closed set — validate against it instead of trusting whatever's
+      // stored, falling back to the default swatch for anything else.
+      var bg=esc(NOTE_COLS.indexOf(n.note_color)>-1 ? n.note_color : NOTE_COLS[0]);
+      var badge=n.note_category&&catLookup[n.note_category]
+        ?'<div class="becss-note-card__badge">'+esc(catLookup[n.note_category])+'</div>':'';
+      return '<div class="becss-note-card" style="background:'+bg+'">'
+        +'<div class="becss-card__actions">'
+        +'<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="editNote(\''+n.note_id+'\')" title="Edit">✎</button>'
+        +'<button class="becss-card__action-btn becss-card__action-btn--delete"  onclick="delNote(\''+n.note_id+'\')"  title="Del">✕</button>'
+        +'</div>'
+        +badge
+        +'<div class="becss-note-card__title">'+esc(n.note_title)+'</div>'
+        +'<div class="becss-note-card__body">'+esc(n.note_content)+'</div>'
+        +'</div>';
+    }).join('')+'</div>';
+}
+
+function setNoteFilter(val, btn){
+  _noteFilter=val;
+  // AUDIT FIX (M-3): scoped to #notesOut, see setLinkFilter's note above.
+  document.querySelectorAll("#notesOut .becss-filter-bar__tab").forEach(function(b){b.classList.remove("becss-filter-bar__tab--active");});
+  if(btn) btn.classList.add("becss-filter-bar__tab--active");
+  loadNotes();
+}
+
+function noteForm(n){
+  n=n||{}; var cur=n.note_color||NOTE_COLS[0];
+  var catOptions='<option value="">— Uncategorized —</option>'
+    +_noteCats.map(function(c){
+      return '<option value="'+c.cat_id+'"'+(n.note_category===c.cat_id?" selected":"")+'>'+esc(c.cat_name)+'</option>';
+    }).join('');
+  return fg("Title *",'<input class="becss-form__input" id="nf_title" value="'+esc(n.note_title||'')+'" placeholder="Note title">')
+    +fg("Content",'<textarea class="becss-form__textarea" id="nf_body" placeholder="Write your note…">'+esc(n.note_content||'')+'</textarea>')
+    +fg("Category",'<select class="becss-form__select" id="nf_cat">'+catOptions+'</select>')
+    +fg("Colour",'<div class="becss-swatch-list">'+NOTE_COLS.map(function(c){
+        return '<div class="becss-swatch-list__swatch'+(c===cur?' becss-swatch-list__swatch--selected':'')+'" style="background:'+c
+          +'" onclick="pickColor(this,\''+c+'\')"></div>';
+      }).join('')+'</div><input type="hidden" id="nf_color" value="'+esc(cur)+'">');
+}
+function pickColor(el,c){
+  document.querySelectorAll(".becss-swatch-list__swatch").forEach(function(s){s.classList.remove("becss-swatch-list__swatch--selected");});
+  el.classList.add("becss-swatch-list__swatch--selected"); document.getElementById("nf_color").value=c;
+}
+function openAddNote(){ editTarget=null; openModal("Add Note",noteForm({})); }
+async function editNote(id){
+  var d=await api("GET","/api/notes");
+  var n=(d.notes||[]).find(function(x){return x.note_id===id;});
+  if(!n){toast("Not found","err");return;}
+  editTarget={type:"note",id:id}; openModal("Edit Note",noteForm(n));
+}
+async function saveNoteModal(){
+  var title=(document.getElementById("nf_title").value||"").trim();
+  if(!title){toast("Title required","err");return;}
+  var catEl=document.getElementById("nf_cat");
+  var body={note_title:title,
+    note_content:(document.getElementById("nf_body").value||"").trim(),
+    note_color:document.getElementById("nf_color").value||NOTE_COLS[0],
+    note_category:catEl&&catEl.value?catEl.value:null};
+  var d=editTarget?await api("PUT","/api/notes/"+editTarget.id,body):await api("POST","/api/notes",body);
+  if(d.ok){toast(editTarget?"Note updated":"Note added");closeModal();loadNotes();}
+  else toast(d.error||"Error","err");
+}
+async function delNote(id){
+  if(!confirm("Delete note?"))return;
+  var d=await api("DELETE","/api/notes/"+id);
+  if(d.ok){toast("Deleted");loadNotes();}else toast(d.error||"Error","err");
+}
+
+/* ══ TODOS ══════════════════════════════════════════════════ */
+async function loadTodos(){
+  var el=document.getElementById("todosOut");
+  var d=await api("GET","/api/todos");
+  _todoCats = d.task_categories || [];
+  var todos = d.todos || [];
+
+  var filterBar='<div class="becss-filter-bar">'
+    +'<button class="becss-filter-bar__tab'+(_todoFilter==="__all__"?" becss-filter-bar__tab--active":"")
+    +'" onclick="setTodoFilter(\'__all__\',this)">All</button>'
+    +'<div class="becss-filter-bar__separator"></div>'
+    +_todoCats.map(function(c){
+      return '<button class="becss-filter-bar__tab'+(_todoFilter===c.cat_id?" becss-filter-bar__tab--active":"")
+        +'" onclick="setTodoFilter(\''+c.cat_id+'\',this)">'+esc(c.cat_name)+'</button>';
+    }).join('')
+    +'</div>';
+
+  var visible = _todoFilter==="__all__" ? todos : todos.filter(function(t){ return t.todo_category===_todoFilter; });
+
+  if(!todos.length){ el.innerHTML=filterBar+empty("✅","No tasks yet"); return; }
+  if(!visible.length){ el.innerHTML=filterBar+empty("✅","No tasks in this category"); return; }
+
+  var catLookup={}; _todoCats.forEach(function(c){catLookup[c.cat_id]=c.cat_name;});
+
+  el.innerHTML=filterBar+'<div class="becss-todo-list">'+visible.map(function(t){
+    var pri=t.priority||"medium";
+    var doneClass=t.done?" becss-todo-item--done":"";
+    var catBadge=t.todo_category&&catLookup[t.todo_category]
+      ? '<span class="becss-todo-item__badge">'+esc(catLookup[t.todo_category])+'</span>' : '';
+    return '<div class="becss-todo-item becss-todo-item--priority-'+pri+doneClass+'" id="trow-'+t.todo_id+'">'
+      +'<div class="becss-todo-item__header" onclick="toggleExpand(\''+t.todo_id+'\')">'
+      +'<input type="checkbox" class="becss-todo-item__checkbox"'+(t.done?" checked":"")
+        +' onchange="toggleDone(\''+t.todo_id+'\',this.checked)" onclick="event.stopPropagation()">'
+      +'<span class="becss-todo-item__label">'+esc(t.todo_text)+'</span>'
+      +catBadge
+      +'<span class="becss-todo-item__badge">'+esc(pri)+'</span>'
+      +'<div class="becss-todo-item__actions" onclick="event.stopPropagation()">'
+      +'<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="editTodo(\''+t.todo_id+'\')" title="Edit">✎</button>'
+      +'<button class="becss-card__action-btn becss-card__action-btn--delete"  onclick="delTodo(\''+t.todo_id+'\')"  title="Del">✕</button>'
+      +'</div>'
+      +'<span class="becss-todo-item__arrow">▶</span>'
+      +'</div>'
+      +'<div class="becss-todo-item__detail">'
+      +'<div class="becss-todo-item__detail-label">Detail</div>'
+      +'<textarea class="becss-todo-item__textarea" id="tdetail-'+t.todo_id
+        +'" placeholder="Add detail notes here…">'+esc(t.todo_detail||'')+'</textarea>'
+      +'<button class="becss-todo-item__save-btn" onclick="saveDetail(\''+t.todo_id+'\')">Save detail</button>'
+      +'</div>'
+      +'</div>';
+  }).join('')+'</div>';
+}
+
+function toggleExpand(tid){
+  var row=document.getElementById("trow-"+tid);
+  if(row) row.classList.toggle("becss-todo-item--expanded");
+}
+function setTodoFilter(val, btn){
+  _todoFilter=val;
+  // AUDIT FIX (M-3): scoped to #todosOut, see setLinkFilter's note above.
+  document.querySelectorAll("#todosOut .becss-filter-bar__tab").forEach(function(b){b.classList.remove("becss-filter-bar__tab--active");});
+  if(btn) btn.classList.add("becss-filter-bar__tab--active");
+  loadTodos();
+}
+async function toggleDone(tid,done){
+  await api("PUT","/api/todos/"+tid,{done:done}); loadTodos();
+}
+async function saveDetail(tid){
+  var el=document.getElementById("tdetail-"+tid);
+  var detail=el?el.value:"";
+  var d=await api("PUT","/api/todos/"+tid,{todo_detail:detail});
+  if(d.ok) toast("Detail saved");
+  else toast(d.error||"Error","err");
+}
+function todoForm(t){
+  t=t||{}; var cur=t.priority||"medium";
+  var catOptions='<option value="">— Uncategorized —</option>'
+    +_todoCats.map(function(c){
+      return '<option value="'+c.cat_id+'"'+(t.todo_category===c.cat_id?" selected":"")+'>'+esc(c.cat_name)+'</option>';
+    }).join('');
+  return fg("Task *",'<input class="becss-form__input" id="tf_text" value="'+esc(t.todo_text||'')+'" placeholder="What needs doing?">')
+    +fg("Priority",'<select class="becss-form__select" id="tf_pri">'
+      +["high","medium","low"].map(function(p){
+        return '<option value="'+p+'"'+(p===cur?" selected":"")+'>'+p.charAt(0).toUpperCase()+p.slice(1)+'</option>';
+      }).join('')+'</select>')
+    +fg("Category",'<select class="becss-form__select" id="tf_cat">'+catOptions+'</select>');
+}
+function openAddTodo(){editTarget=null;openModal("Add Task",todoForm({}));}
+async function editTodo(id){
+  var d=await api("GET","/api/todos");
+  var t=(d.todos||[]).find(function(x){return x.todo_id===id;});
+  if(!t){toast("Not found","err");return;}
+  editTarget={type:"todo",id:id}; openModal("Edit Task",todoForm(t));
+}
+async function saveTodoModal(){
+  var text=(document.getElementById("tf_text").value||"").trim();
+  if(!text){toast("Task text required","err");return;}
+  var catEl=document.getElementById("tf_cat");
+  var body={todo_text:text,priority:document.getElementById("tf_pri").value,
+    todo_category:catEl&&catEl.value?catEl.value:null};
+  var d=editTarget?await api("PUT","/api/todos/"+editTarget.id,body):await api("POST","/api/todos",body);
+  if(d.ok){toast(editTarget?"Task updated":"Task added");closeModal();loadTodos();}
+  else toast(d.error||"Error","err");
+}
+async function delTodo(id){
+  if(!confirm("Delete task?"))return;
+  var d=await api("DELETE","/api/todos/"+id);
+  if(d.ok){toast("Deleted");loadTodos();}else toast(d.error||"Error","err");
+}
+async function clearDone(){
+  if(!confirm("Clear all completed tasks?"))return;
+  var d=await api("POST","/api/todos/clear-done");
+  if(d.ok){toast("Cleared");loadTodos();}
+}
+
+/* ══ BUILD ══════════════════════════════════════════════════ */
+async function loadBuild(){
+  var el = document.getElementById("buildOut");
+  var results=await Promise.all([api("GET","/api/links"),api("GET","/api/notes"),api("GET","/api/todos")]);
+  var links=results[0].links||[], notes=results[1].notes||[], todos=results[2].todos||[];
+  var cats=results[0].categories||{};
+  el.innerHTML='<div class="becss-build-grid">'
+    +'<div class="becss-build-card"><h3>Data</h3><div class="becss-build-card__stat-list">'
+    +sr("Links",links.length)+sr("Categories",Object.keys(cats).length)
+    +sr("Notes",notes.length)+sr("Tasks",todos.length)
+    +sr("Open tasks",todos.filter(function(t){return !t.done;}).length)
+    +'</div></div>'
+    +'<div class="becss-build-card"><h3>Export</h3>'
+    +'<p class="becss-build-card__note">Generates a self-contained <code>index.html</code> in <code>Export/</code>. '
+    +'Set it as your browser homepage.</p>'
+    +'<div class="becss-build-card__actions">'
+    +'<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="buildPage()">🏗 Build</button>'
+    +'<button class="becss-toolbar__btn" onclick="downloadPage()">⬇ Download</button>'
+    +'</div>'
+    +'<div class="becss-build-card__log" id="buildLog">Ready.</div>'
+    +'</div></div>';
+}
+function sr(label,val){ return '<div class="becss-build-card__stat-row"><span>'+label+'</span><span class="becss-build-card__stat-value">'+val+'</span></div>'; }
+async function buildPage(){
+  var log=document.getElementById("buildLog");
+  if(log) log.textContent="Starting build…";
+  var start=await api("POST","/api/build");
+  if(!start.ok){ toast(start.error||"Could not start build","err"); if(log) log.textContent="Error: "+(start.error||"unknown"); return; }
+  _pollBuildStatus(log);
+}
+async function _pollBuildStatus(log){
+  var d=await api("GET","/api/build/status");
+  if(log && d.log && d.log.length) log.textContent=d.log.join("\n");
+  if(d.running){
+    setTimeout(function(){ _pollBuildStatus(log); }, 700);
+    return;
+  }
+  if(d.error){
+    toast(d.error_type?d.error_type+": "+d.error:d.error,"err");
+    if(log) log.textContent="Error ("+(d.error_type||"?")+"): "+d.error+"\n\n"+(d.log||[]).join("\n");
+    return;
+  }
+  var r=d.result||{};
+  var m="Built — "+r.pages+" page(s), "+r.posts+" post(s), "+r.category_pages+" categor"+(r.category_pages===1?"y":"ies")
+    +", "+r.tag_pages+" tag page(s), "+r.media_copied+" media file(s) → Export/";
+  if(r.auto_published && r.auto_published.length) m+=" ("+r.auto_published.length+" scheduled post(s) auto-published)";
+  var findings=0; if(r.audit){for(var k in r.audit){findings+=(r.audit[k].verify||[]).length;}}
+  if(findings) m+=" — ⚠ "+findings+" audit finding(s), see server log";
+  if(r.warnings && r.warnings.length){
+    m += "\nℹ "+r.warnings.join(" ℹ ");
+  }
+  toast("Build complete");
+  if(log) log.textContent=m;
+}
+function downloadPage(){ window.location.href="/api/build/download"; }
+
+/* ══ SETTINGS ══════════════════════════════════════════════ */
+async function loadSettings(){
+  var el=document.getElementById("settingsOut");
+  var d=await api("GET","/api/config");
+  _cfgRaw=d.settings||[];
+  el.innerHTML='<div class="becss-section-header">Site Settings</div><div class="becss-settings-list">'
+    +_cfgRaw.map(function(s){
+      // AUDIT FIX (M-5): show_clock/show_greeting/accent_color/bg_color
+      // have real, working code behind them — but only in
+      // lib_bejson_Management_build.py's export path, which is what
+      // lib_bejson_Management_cli.py's Termux menu still uses (see
+      // app.py's own BUILD section comment). The web app's "Build"
+      // button here calls lib_bejson_Management_static_builder.py
+      // instead, which these 4 settings have zero effect on — a real
+      // person adjusting these in this Settings panel and then clicking
+      // Build would see no change and reasonably think the setting is
+      // broken. Rather than wiring these into the (deliberately fixed,
+      // BEJSON-vanilla) web build's design system as a larger feature
+      // change, flagging the actual scope inline so it's not a silent
+      // trap.
+      var cliOnlyNote = (s.setting_name==="show_clock"||s.setting_name==="show_greeting"
+        ||s.setting_name==="accent_color"||s.setting_name==="bg_color")
+        ? '<div class="becss-settings-list__desc" style="color:#DE2626;opacity:.85">Affects the Termux CLI export only — no effect on this app\'s own Build button.</div>'
+        : '';
+      return '<div class="becss-settings-list__row">'
+        +'<div><div class="becss-settings-list__label">'+esc(s.setting_name.replace(/_/g," "))+'</div>'
+        +'<div class="becss-settings-list__desc">'+esc(s.description)+'</div>'+cliOnlyNote+'</div>'
+        +settingInput(s)+'</div>';
+    }).join('')+'</div>'
+    +'<div class="becss-section-header" style="margin-top:1.5rem;color:#DE2626">Danger Zone</div>'
+    +'<div class="becss-settings-list"><div class="becss-settings-list__row">'
+    +'<div><div class="becss-settings-list__label">Factory Reset</div>'
+    +'<div class="becss-settings-list__desc">Wipes all Pages, Posts, Categories, Nav, Media, Notes, '
+    +'Tasks, Links, and Settings back to a clean default install. Everything is backed up first, '
+    +'nothing is permanently destroyed — but this cannot be undone from the UI.</div></div>'
+    +'<button class="becss-btn" style="border-color:#DE2626;color:#DE2626" onclick="openFactoryResetConfirm()">⚠ Factory Reset…</button>'
+    +'</div></div>';
+}
+function settingInput(s){
+  var id="cfg_"+s.setting_name,v=s.setting_value;
+  if(s.setting_name==="show_clock"||s.setting_name==="show_greeting")
+    return '<input type="checkbox" class="becss-settings-list__input" id="'+id+'"'+(String(v).toLowerCase()==="true"?" checked":"")+' >';
+  if(s.setting_name.indexOf("color")!==-1)
+    return '<input type="color" class="becss-settings-list__input" id="'+id+'" value="'+esc(v)+'">';
+  if(s.setting_name==="port")
+    return '<input type="number" class="becss-settings-list__input" id="'+id+'" value="'+esc(v)+'">';
+  return '<input type="text" class="becss-settings-list__input" id="'+id+'" value="'+esc(v)+'">';
+}
+async function saveSettings(){
+  var body={};
+  _cfgRaw.forEach(function(s){
+    var el=document.getElementById("cfg_"+s.setting_name); if(!el) return;
+    if(el.type==="checkbox") body[s.setting_name]=el.checked;
+    else if(el.type==="number") body[s.setting_name]=Number(el.value);
+    else body[s.setting_name]=el.value;
+  });
+  var d=await api("POST","/api/config",body);
+  if(d.ok) toast("Settings saved"); else toast(d.error||"Error","err");
+}
+
+/* ══ MODAL ══════════════════════════════════════════════════ */
+function openModal(title, body){
+  document.getElementById("modalTitle").textContent=title;
+  document.getElementById("modalBody").innerHTML=body;
+  document.getElementById("modalSaveBtn").disabled=false;
+  document.getElementById("modalOv").classList.add("becss-modal-overlay--open");
+  setTimeout(function(){ var f=document.querySelector("#modalBody .becss-form__input"); if(f) f.focus(); },55);
+}
+function closeModal(){
+  document.getElementById("modalOv").classList.remove("becss-modal-overlay--open"); editTarget=null;
+}
+document.getElementById("modalOv").addEventListener("click",function(e){ if(e.target===this) closeModal(); });
+function handleSave(){
+  var t=editTarget?editTarget.type:P;
+  if(t==="link"||P==="links") saveLinkModal();
+  else if(t==="note"||P==="notes") saveNoteModal();
+  else if(t==="todo"||P==="todos") saveTodoModal();
+  else if(t==="page"||P==="pages") savePageModal();
+  else if(t==="post"||P==="posts") savePostModal();
+  else if(t==="category"||P==="categories") saveCategoryModal();
+  else if(t==="navitem"||P==="navmenu") saveNavItemModal();
+  else if(t==="factory-reset") confirmFactoryReset();
+}
+
+/* ══ PAGES ══════════════════════════════════════════════════ */
+var _pageTypes = {}, _pageCatsForPages = [], _allPages = [];
+var PAGE_STATUS_OPTIONS = ["draft","published","archived"];
+
+async function loadPages(){
+  var el = document.getElementById("pagesOut");
+  var d = await api("GET","/api/pages");
+  _allPages = d.pages || [];
+  var pt = await api("GET","/api/page-types");
+  _pageTypes = pt.page_types || {};
+  var cd = await api("GET","/api/categories?type=page");
+  _pageCatsForPages = cd.categories || [];
+
+  if (!_allPages.length){ el.innerHTML = empty("📄","No pages yet"); return; }
+  var catLookup={}; _pageCatsForPages.forEach(function(c){catLookup[c.id]=c.title;});
+
+  el.innerHTML = '<div class="becss-link-grid">'
+    +_allPages.map(function(p){
+      var badge = '<div class="becss-note-card__badge">'+esc(p.page_type||"content")+' · '+esc(p.status)+'</div>';
+      var catBadge = p.category_id&&catLookup[p.category_id] ? ' · '+esc(catLookup[p.category_id]) : '';
+      return '<div class="becss-link-card">'
+        +'<div class="becss-card__actions">'
+        +'<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="editPage(\''+p.id+'\')" title="Edit">✎</button>'
+        +'<button class="becss-card__action-btn becss-card__action-btn--delete" onclick="delPage(\''+p.id+'\')" title="Del">✕</button>'
+        +'</div>'+badge
+        +'<div class="becss-link-card__head"><span class="becss-link-card__title">'+esc(p.title||p.slug)+catBadge+'</span></div>'
+        +'<div class="becss-link-card__url">/'+esc(p.slug)+'.html</div>'
+        +(p.meta_description?'<div class="becss-link-card__desc">'+esc(p.meta_description)+'</div>':'')
+        +'</div>';
+    }).join('')+'</div>';
+}
+function pageForm(p){
+  p=p||{};
+  var typeOptions=Object.keys(_pageTypes).map(function(k){
+    return '<option value="'+k+'"'+(p.page_type===k?" selected":"")+'>'+esc(_pageTypes[k].label||k)+'</option>';
+  }).join('');
+  var catOptions='<option value="">— None —</option>'
+    +_pageCatsForPages.map(function(c){
+      return '<option value="'+c.id+'"'+(p.category_id===c.id?" selected":"")+'>'+esc(c.title)+'</option>';
+    }).join('');
+  var statusOptions=PAGE_STATUS_OPTIONS.map(function(s){
+    return '<option value="'+s+'"'+(p.status===s?" selected":"")+'>'+esc(s)+'</option>';
+  }).join('');
+  return fg("Title *",'<input class="becss-form__input" id="pf_title" value="'+esc(p.title||'')+'" placeholder="About Us">')
+    +fg("Slug",'<input class="becss-form__input" id="pf_slug" value="'+esc(p.slug||'')+'" placeholder="auto from title if blank">')
+    +fg("Page Type",'<select class="becss-form__select" id="pf_type">'+typeOptions+'</select>')
+    +fg("Category",'<select class="becss-form__select" id="pf_cat">'+catOptions+'</select>')
+    +fg("Status",'<select class="becss-form__select" id="pf_status">'+statusOptions+'</select>')
+    +fg("Meta Description",'<input class="becss-form__input" id="pf_meta" value="'+esc(p.meta_description||'')+'">')
+    +fg("Content (HTML)",'<textarea class="becss-form__textarea" id="pf_content">'+esc(p.content_html||'')+'</textarea>')
+    +fg("Author",'<input class="becss-form__input" id="pf_author" value="'+esc(p.author||'')+'">')
+    +fg("Featured Image (image or YouTube link — embeds automatically)",'<div style="display:flex;gap:.4rem">'
+      +'<input class="becss-form__input" id="pf_img" value="'+esc(p.featured_image||'')+'" placeholder="/media-files/…">'
+      +'<button type="button" class="becss-btn" style="white-space:nowrap" onclick="openMediaPicker(\'pf_img\')">🖼 Browse…</button></div>');
+}
+function openAddPage(){ editTarget=null; openModal("Add Page",pageForm({})); }
+function editPage(id){
+  var p=_allPages.find(function(x){return x.id===id;});
+  if(!p){toast("Not found","err");return;}
+  editTarget={type:"page",id:id}; openModal("Edit Page",pageForm(p));
+}
+async function savePageModal(){
+  var title=(document.getElementById("pf_title").value||"").trim();
+  if(!title){toast("Title required","err");return;}
+  var body={title:title, slug:(document.getElementById("pf_slug").value||"").trim(),
+    page_type:document.getElementById("pf_type").value, category_id_fk:document.getElementById("pf_cat").value||null,
+    status:document.getElementById("pf_status").value, meta_description:(document.getElementById("pf_meta").value||"").trim(),
+    content_html:document.getElementById("pf_content").value||"", author:(document.getElementById("pf_author").value||"").trim(),
+    featured_image:(document.getElementById("pf_img").value||"").trim()};
+  var d=editTarget?await api("PUT","/api/pages/"+editTarget.id,body):await api("POST","/api/pages",body);
+  if(d.ok){toast(editTarget?"Page updated":"Page added");closeModal();loadPages();}
+  else toast(d.error||"Error","err");
+}
+async function delPage(id){
+  if(!confirm("Delete page?"))return;
+  var d=await api("DELETE","/api/pages/"+id);
+  if(d.ok){toast("Deleted");loadPages();}else toast(d.error||"Error","err");
+}
+
+/* ══ POSTS ══════════════════════════════════════════════════ */
+var _postStatuses = {}, _postCatsForPosts = [], _allTags = [], _allPosts = [];
+var _postStatusFilter = "all";
+
+async function loadPosts(){
+  var el = document.getElementById("postsOut");
+  var d = await api("GET","/api/posts?status="+_postStatusFilter);
+  _allPosts = d.posts || [];
+  var st = await api("GET","/api/post-statuses");
+  _postStatuses = st.post_statuses || {};
+  var cd = await api("GET","/api/categories?type=post");
+  _postCatsForPosts = cd.categories || [];
+  var td = await api("GET","/api/tags");
+  _allTags = td.tags || [];
+
+  var filterBar='<div class="becss-filter-bar">'
+    +['all'].concat(Object.keys(_postStatuses)).map(function(s){
+      return '<button class="becss-filter-bar__tab'+(_postStatusFilter===s?" becss-filter-bar__tab--active":"")
+        +'" onclick="setPostStatusFilter(\''+s+'\',this)">'+esc(s==="all"?"All":s)+'</button>';
+    }).join('')+'</div>';
+
+  if (!_allPosts.length){ el.innerHTML = filterBar+empty("📰","No posts yet"); return; }
+  var catLookup={}; _postCatsForPosts.forEach(function(c){catLookup[c.id]=c.title;});
+  var tagLookup={}; _allTags.forEach(function(t){tagLookup[t.id]=t.name;});
+
+  el.innerHTML = filterBar+'<div class="becss-link-grid">'
+    +_allPosts.map(function(p){
+      var badge = '<div class="becss-note-card__badge">'+esc(p.status)+'</div>';
+      var catBadge = p.category_id&&catLookup[p.category_id] ? ' · '+esc(catLookup[p.category_id]) : '';
+      var tagNames = (p.tag_ids||[]).map(function(tid){return tagLookup[tid];}).filter(Boolean).join(", ");
+      var actions = '<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="editPost(\''+p.id+'\')" title="Edit">✎</button>'
+        +'<button class="becss-card__action-btn becss-card__action-btn--delete" onclick="delPost(\''+p.id+'\')" title="Del">✕</button>';
+      return '<div class="becss-link-card">'
+        +'<div class="becss-card__actions">'+actions+'</div>'+badge
+        +'<div class="becss-link-card__head"><span class="becss-link-card__title">'+esc(p.title)+catBadge+'</span></div>'
+        +'<div class="becss-link-card__url">by '+esc(p.author||'—')+(p.published_at?' · '+esc(p.published_at):'')+'</div>'
+        +(tagNames?'<div class="becss-link-card__desc">Tags: '+esc(tagNames)+'</div>':'')
+        +(p.status!=="published"?'<button class="becss-btn" style="margin-top:.4rem;font-size:.72rem;padding:.2rem .5rem" onclick="quickPublishPost(\''+p.id+'\')">Publish now</button>':'')
+        +'</div>';
+    }).join('')+'</div>';
+}
+function setPostStatusFilter(val,btn){
+  _postStatusFilter=val;
+  document.querySelectorAll("#postsOut .becss-filter-bar__tab").forEach(function(b){b.classList.remove("becss-filter-bar__tab--active");});
+  if(btn) btn.classList.add("becss-filter-bar__tab--active");
+  loadPosts();
+}
+function postForm(p){
+  p=p||{};
+  var catOptions='<option value="">— None —</option>'
+    +_postCatsForPosts.map(function(c){
+      return '<option value="'+c.id+'"'+(p.category_id===c.id?" selected":"")+'>'+esc(c.title)+'</option>';
+    }).join('');
+  var statusOptions=Object.keys(_postStatuses).map(function(s){
+    return '<option value="'+s+'"'+(p.status===s?" selected":"")+'>'+esc(s)+'</option>';
+  }).join('');
+  var tagChecks=_allTags.map(function(t){
+    var checked=(p.tag_ids||[]).indexOf(t.id)>-1?" checked":"";
+    return '<span style="display:inline-flex;align-items:center;gap:.15rem;margin:.15rem .5rem .15rem 0;font-size:.78rem">'
+      +'<label style="display:inline-flex;align-items:center;gap:.25rem">'
+      +'<input type="checkbox" class="pf_tag_cb" value="'+t.id+'"'+checked+'> '+esc(t.name)+'</label>'
+      +'<button type="button" class="becss-btn becss-btn--danger" style="padding:0 .3rem;font-size:.7rem;line-height:1.4"'
+      +' title="Delete tag" onclick="deleteTag(\''+t.id+'\')">✕</button></span>';
+  }).join('');
+  return fg("Title *",'<input class="becss-form__input" id="pof_title" value="'+esc(p.title||'')+'" placeholder="Post title">')
+    +fg("Slug",'<input class="becss-form__input" id="pof_slug" value="'+esc(p.slug||'')+'" placeholder="auto from title if blank">')
+    +fg("Category",'<select class="becss-form__select" id="pof_cat">'+catOptions+'</select>')
+    +fg("Status",'<select class="becss-form__select" id="pof_status" onchange="_toggleScheduleField()">'+statusOptions+'</select>')
+    +'<div class="becss-form__group" id="pof_sched_group" style="'+(p.status==="scheduled"?"":"display:none")+'">'
+    +'<label class="becss-form__label">Scheduled At</label>'
+    +'<input type="datetime-local" class="becss-form__input" id="pof_sched" value="'+esc(_isoToLocalDatetimeInput(p.scheduled_at))+'"></div>'
+    +fg("Content (HTML)",'<textarea class="becss-form__textarea" id="pof_content">'+esc(p.content_html||'')+'</textarea>')
+    +fg("Author",'<input class="becss-form__input" id="pof_author" value="'+esc(p.author||'')+'">')
+    +fg("Featured Image (image or YouTube link — embeds automatically)",'<div style="display:flex;gap:.4rem">'
+      +'<input class="becss-form__input" id="pof_img" value="'+esc(p.featured_image||'')+'" placeholder="/media-files/…">'
+      +'<button type="button" class="becss-btn" style="white-space:nowrap" onclick="openMediaPicker(\'pof_img\')">🖼 Browse…</button></div>')
+    +fg("Tags",'<div>'+tagChecks+'</div><div style="margin-top:.35rem;display:flex;gap:.35rem">'
+      +'<input class="becss-form__input" id="pof_newtag" placeholder="New tag name">'
+      +'<button type="button" class="becss-btn" style="white-space:nowrap" onclick="quickAddTag()">＋ Add</button></div>');
+}
+function _capturePostFormState(){
+  var checkedTagIds = Array.prototype.map.call(document.querySelectorAll(".pf_tag_cb:checked"), function(cb){ return cb.value; });
+  return {
+    title: document.getElementById("pof_title").value,
+    slug: document.getElementById("pof_slug").value,
+    category_id: document.getElementById("pof_cat").value,
+    status: document.getElementById("pof_status").value,
+    scheduled_at: document.getElementById("pof_sched") ? _localDatetimeInputToIso(document.getElementById("pof_sched").value) : "",
+    content_html: document.getElementById("pof_content").value,
+    author: document.getElementById("pof_author").value,
+    featured_image: document.getElementById("pof_img").value,
+    tag_ids: checkedTagIds,
+  };
+}
+async function quickAddTag(){
+  var name=(document.getElementById("pof_newtag").value||"").trim();
+  if(!name){return;}
+  var currentState = _capturePostFormState();
+  var d=await api("POST","/api/tags",{name:name});
+  if(d.ok){ var td=await api("GET","/api/tags"); _allTags=td.tags||[];
+    // AUDIT FIX (M-1): this used to force editTarget to {type:"post"} (no
+    // id) whenever it ran, including while adding a NEW post
+    // (editTarget === null at that point). savePostModal() then took the
+    // "edit" branch and issued PUT /api/posts/undefined -> 404, silently
+    // losing the save. deleteTag() (just below) already gets this right
+    // by leaving editTarget alone and only re-rendering the open form —
+    // mirror that here instead of touching editTarget at all.
+    openModal(document.getElementById("modalTitle").textContent, postForm(currentState));
+    toast("Tag added");
+  } else toast(d.error||"Error","err");
+}
+async function deleteTag(tagId){
+  // Audit item 5 fix: tags were add-only from this UI; the backend route
+  // now exists (DELETE /api/tags/<id>), this wires it up. If the post
+  // editor is currently open, refresh it in place so the removed chip
+  // (and any checked state referencing it) disappears immediately.
+  if(!confirm("Delete this tag? It will be removed from any posts using it.")) return;
+  var currentState = document.getElementById("pof_title") ? _capturePostFormState() : null;
+  var d = await api("DELETE","/api/tags/"+tagId);
+  if(d.ok){
+    var td=await api("GET","/api/tags"); _allTags=td.tags||[];
+    if(currentState){
+      currentState.tag_ids = currentState.tag_ids.filter(function(id){return id!==tagId;});
+      openModal(document.getElementById("modalTitle").textContent, postForm(currentState));
+    }
+    toast("Tag deleted");
+  } else toast(d.error||"Error","err");
+}
+function _toggleScheduleField(){
+  var s=document.getElementById("pof_status").value;
+  document.getElementById("pof_sched_group").style.display = s==="scheduled" ? "" : "none";
+}
+function openAddPost(){ editTarget=null; openModal("Add Post",postForm({})); }
+function editPost(id){
+  var p=_allPosts.find(function(x){return x.id===id;});
+  if(!p){toast("Not found","err");return;}
+  editTarget={type:"post",id:id}; openModal("Edit Post",postForm(p));
+}
+async function savePostModal(){
+  var title=(document.getElementById("pof_title").value||"").trim();
+  if(!title){toast("Title required","err");return;}
+  var tagIds=Array.prototype.map.call(document.querySelectorAll(".pf_tag_cb:checked"),function(cb){return cb.value;});
+  var body={title:title, slug:(document.getElementById("pof_slug").value||"").trim(),
+    category_id_fk:document.getElementById("pof_cat").value||null, status:document.getElementById("pof_status").value,
+    scheduled_at:document.getElementById("pof_sched")?_localDatetimeInputToIso(document.getElementById("pof_sched").value):"",
+    content_html:document.getElementById("pof_content").value||"", author:(document.getElementById("pof_author").value||"").trim(),
+    featured_image:(document.getElementById("pof_img").value||"").trim(), tag_ids:tagIds};
+  var d=editTarget?await api("PUT","/api/posts/"+editTarget.id,body):await api("POST","/api/posts",body);
+  if(d.ok){toast(editTarget?"Post updated":"Post added");closeModal();loadPosts();}
+  else toast(d.error||"Error","err");
+}
+async function delPost(id){
+  if(!confirm("Delete post?"))return;
+  var d=await api("DELETE","/api/posts/"+id);
+  if(d.ok){toast("Deleted");loadPosts();}else toast(d.error||"Error","err");
+}
+async function quickPublishPost(id){
+  var d=await api("POST","/api/posts/"+id+"/publish");
+  if(d.ok){toast("Published");loadPosts();}else toast(d.error||"Error","err");
+}
+
+/* ══ CATEGORIES (CMS: shared, hierarchical) ═══════════════════ */
+var _catTypeFilter = "post", _flatCategories = [];
+
+function _indentedCategoryOptions(items, excludeId, selectedId, depth, parentId){
+  depth=depth||0; parentId=parentId===undefined?null:parentId;
+  var out="";
+  items.filter(function(c){ return (c.parent_id||null)===parentId && c.id!==excludeId; }).forEach(function(c){
+    out += '<option value="'+c.id+'"'+(c.id===selectedId?" selected":"")+'>'+"— ".repeat(depth)+esc(c.title)+'</option>';
+    out += _indentedCategoryOptions(items, excludeId, selectedId, depth+1, c.id);
+  });
+  return out;
+}
+var _catDragId = null;
+
+function _renderCategoryTree(nodes){
+  if(!nodes||!nodes.length) return "";
+  return '<ul style="list-style:none;margin:0;padding-left:1.1rem">'+nodes.map(function(n){
+    return '<li style="margin:.2rem 0">'
+      +'<div class="becss-tree-row" draggable="true" data-cat-id="'+n.id+'"'
+      +' ondragstart="_catDragStart(event,\''+n.id+'\')"'
+      +' ondragover="_catDragOver(event,\''+n.id+'\')"'
+      +' ondragleave="_catDragLeave(event)"'
+      +' ondrop="_catDrop(event,\''+n.id+'\')"'
+      +' ondragend="_catDragEnd(event)">'
+      +'<span class="becss-tree-drag-handle">⠿</span>'
+      +'<span style="font-size:.85rem;flex:1">'+esc(n.title)+'</span>'
+      +'<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="editCategory(\''+n.id+'\')" title="Edit">✎</button>'
+      +'<button class="becss-card__action-btn becss-card__action-btn--delete" onclick="delCategory(\''+n.id+'\')" title="Del">✕</button>'
+      +'</div>'
+      +_renderCategoryTree(n.children)+'</li>';
+  }).join('')+'</ul>';
+}
+// AUDIT FIX (M-7): checks whether `ancestorId` would become a descendant
+// of `nodeId` if dropped there — i.e. whether dropping would create a
+// cycle. Uses _flatCategories (already loaded by loadCategories(), has
+// parent_id on every row) so this is a client-side pre-check; the real
+// enforcement is server-side in app.py's update_category() — this is
+// purely so dragging onto an invalid target shows no drop-target
+// highlight instead of looking like a valid drop and then failing.
+function _catWouldCycle(dragId, targetId){
+  var walk = targetId, seen = {};
+  while (walk){
+    if (walk === dragId) return true;
+    if (seen[walk]) break;
+    seen[walk] = true;
+    var node = _flatCategories.find(function(c){ return c.id === walk; });
+    walk = node ? node.parent_id : null;
+  }
+  return false;
+}
+function _catDragStart(e, id){
+  _catDragId = id;
+  e.dataTransfer.effectAllowed = "move";
+  e.currentTarget.classList.add("becss-tree-row--dragging");
+}
+function _catDragOver(e, targetId){
+  if (!_catDragId || _catDragId === targetId || _catWouldCycle(_catDragId, targetId)) return;
+  e.preventDefault();
+  e.currentTarget.classList.add("becss-tree-row--drop-inside");
+}
+function _catDragLeave(e){
+  e.currentTarget.classList.remove("becss-tree-row--drop-inside");
+}
+async function _catDrop(e, targetId){
+  e.preventDefault();
+  e.currentTarget.classList.remove("becss-tree-row--drop-inside");
+  if (!_catDragId || _catDragId === targetId || _catWouldCycle(_catDragId, targetId)) return;
+  var d = await api("PUT","/api/categories/"+_catDragId, {parent_id: targetId});
+  if (d.ok){ toast("Moved"); loadCategories(); } else { toast(d.error||"Could not move category","err"); }
+}
+function _catDragEnd(e){
+  document.querySelectorAll(".becss-tree-row--dragging").forEach(function(el){ el.classList.remove("becss-tree-row--dragging"); });
+  _catDragId = null;
+}
+function _catTopLevelDragOver(e){
+  if (!_catDragId) return;
+  e.preventDefault();
+  e.currentTarget.classList.add("becss-tree-toplevel-zone--dragover");
+}
+function _catTopLevelDragLeave(e){
+  e.currentTarget.classList.remove("becss-tree-toplevel-zone--dragover");
+}
+async function _catTopLevelDrop(e){
+  e.preventDefault();
+  e.currentTarget.classList.remove("becss-tree-toplevel-zone--dragover");
+  if (!_catDragId) return;
+  var d = await api("PUT","/api/categories/"+_catDragId, {parent_id: null});
+  if (d.ok){ toast("Moved to top level"); loadCategories(); } else { toast(d.error||"Could not move category","err"); }
+}
+async function loadCategories(){
+  var el = document.getElementById("categoriesOut");
+  var fd = await api("GET","/api/categories?type="+_catTypeFilter);
+  _flatCategories = fd.categories || [];
+  var td = await api("GET","/api/categories/tree?type="+_catTypeFilter);
+  var tree = td.tree || [];
+
+  var filterBar='<div class="becss-filter-bar">'
+    +['post','page'].map(function(ty){
+      return '<button class="becss-filter-bar__tab'+(_catTypeFilter===ty?" becss-filter-bar__tab--active":"")
+        +'" onclick="setCatTypeFilter(\''+ty+'\',this)">'+esc(ty==="post"?"Post Categories":"Page Categories")+'</button>';
+    }).join('')+'</div>';
+
+  var topLevelZone = '<div class="becss-tree-toplevel-zone" ondragover="_catTopLevelDragOver(event)" '
+    +'ondragleave="_catTopLevelDragLeave(event)" ondrop="_catTopLevelDrop(event)">'
+    +'Drag a category here to move it to the top level</div>';
+
+  el.innerHTML = filterBar + topLevelZone + (tree.length ? _renderCategoryTree(tree) : empty("🗃","No "+_catTypeFilter+" categories yet"));
+}
+function setCatTypeFilter(val,btn){
+  _catTypeFilter=val;
+  document.querySelectorAll("#categoriesOut .becss-filter-bar__tab").forEach(function(b){b.classList.remove("becss-filter-bar__tab--active");});
+  if(btn) btn.classList.add("becss-filter-bar__tab--active");
+  loadCategories();
+}
+function categoryForm(c){
+  c=c||{};
+  var parentOptions='<option value="">— Top level —</option>'+_indentedCategoryOptions(_flatCategories, c.id, c.parent_id);
+  return fg("Title *",'<input class="becss-form__input" id="cf_title" value="'+esc(c.title||'')+'" placeholder="Tutorials">')
+    +fg("Slug",'<input class="becss-form__input" id="cf_slug" value="'+esc(c.slug||'')+'" placeholder="auto from title if blank">')
+    +fg("Type",'<select class="becss-form__select" id="cf_type"><option value="post"'+(c.category_type!=="page"?" selected":"")+'>Post</option>'
+      +'<option value="page"'+(c.category_type==="page"?" selected":"")+'>Page</option></select>')
+    +fg("Parent",'<select class="becss-form__select" id="cf_parent">'+parentOptions+'</select>')
+    +fg("Description",'<input class="becss-form__input" id="cf_desc" value="'+esc(c.description||'')+'">');
+}
+function openAddCategory(){ editTarget=null; openModal("Add Category",categoryForm({category_type:_catTypeFilter})); }
+function editCategory(id){
+  var c=_flatCategories.find(function(x){return x.id===id;});
+  if(!c){toast("Not found","err");return;}
+  editTarget={type:"category",id:id}; openModal("Edit Category",categoryForm(c));
+}
+async function saveCategoryModal(){
+  var title=(document.getElementById("cf_title").value||"").trim();
+  if(!title){toast("Title required","err");return;}
+  var body={title:title, slug:(document.getElementById("cf_slug").value||"").trim(),
+    category_type:document.getElementById("cf_type").value, parent_id:document.getElementById("cf_parent").value||null,
+    description:(document.getElementById("cf_desc").value||"").trim()};
+  var d=editTarget?await api("PUT","/api/categories/"+editTarget.id,body):await api("POST","/api/categories",body);
+  if(d.ok){toast(editTarget?"Category updated":"Category added");closeModal();loadCategories();}
+  else toast(d.error||"Error","err");
+}
+async function delCategory(id){
+  if(!confirm("Delete category? Child categories will be moved to top level."))return;
+  var d=await api("DELETE","/api/categories/"+id);
+  if(d.ok){toast("Deleted");loadCategories();}else toast(d.error||"Error","err");
+}
+
+/* ══ SITE NAV (admin hierarchical NavLink) ═════════════════════ */
+var _flatNavItems = [];
+
+var _navDragId = null;
+
+function _renderNavTree(nodes){
+  if(!nodes||!nodes.length) return "";
+  return '<ul style="list-style:none;margin:0;padding-left:1.1rem">'+nodes.map(function(n){
+    var inactive = n.active===false ? ' style="opacity:.5"' : '';
+    return '<li style="margin:.2rem 0"'+inactive+'>'
+      +'<div class="becss-tree-row" draggable="true" data-nav-id="'+n.nav_id+'"'
+      +' ondragstart="_navDragStart(event,\''+n.nav_id+'\')"'
+      +' ondragover="_navDragOver(event,\''+n.nav_id+'\')"'
+      +' ondragleave="_navDragLeave(event)"'
+      +' ondrop="_navDrop(event,\''+n.nav_id+'\')"'
+      +' ondragend="_navDragEnd(event)">'
+      +'<span class="becss-tree-drag-handle">⠿</span>'
+      +'<span style="font-size:.85rem">'+esc(n.label)+'</span>'
+      +'<span style="font-size:.72rem;color:var(--text-muted);flex:1">'+esc(n.url)+'</span>'
+      +'<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="editNavItem(\''+n.nav_id+'\')" title="Edit">✎</button>'
+      +'<button class="becss-card__action-btn becss-card__action-btn--delete" onclick="delNavItem(\''+n.nav_id+'\')" title="Del">✕</button>'
+      +'</div>'
+      +_renderNavTree(n.children)+'</li>';
+  }).join('')+'</ul>';
+}
+function _navDragZone(e){
+  var rect = e.currentTarget.getBoundingClientRect();
+  var y = e.clientY - rect.top;
+  var third = rect.height / 3;
+  if (y < third) return "before";
+  if (y > third * 2) return "after";
+  return "inside";
+}
+function _navDragStart(e, id){
+  _navDragId = id;
+  e.dataTransfer.effectAllowed = "move";
+  e.currentTarget.classList.add("becss-tree-row--dragging");
+}
+function _navDragOver(e, targetId){
+  if (!_navDragId || _navDragId === targetId) return;
+  e.preventDefault();
+  var zone = _navDragZone(e);
+  e.currentTarget.classList.remove("becss-tree-row--drop-before","becss-tree-row--drop-after","becss-tree-row--drop-inside");
+  e.currentTarget.classList.add("becss-tree-row--drop-"+zone);
+}
+function _navDragLeave(e){
+  e.currentTarget.classList.remove("becss-tree-row--drop-before","becss-tree-row--drop-after","becss-tree-row--drop-inside");
+}
+async function _navDrop(e, targetId){
+  e.preventDefault();
+  var zone = _navDragZone(e);
+  e.currentTarget.classList.remove("becss-tree-row--drop-before","becss-tree-row--drop-after","becss-tree-row--drop-inside");
+  if (!_navDragId || _navDragId === targetId) return;
+
+  var target = _flatNavItems.find(function(x){ return x.nav_id === targetId; });
+  var dragged = _flatNavItems.find(function(x){ return x.nav_id === _navDragId; });
+  if (!target || !dragged) return;
+
+  if (zone === "inside"){
+    var d = await api("PUT","/api/nav/"+_navDragId, {parent_id: targetId});
+    if (d.ok){ toast("Moved"); loadNavMenu(); } else { toast(d.error||"Could not move item","err"); }
+    return;
+  }
+
+  // before/after: become a sibling of target (matching target's parent_id
+  // if different), then reorder within that sibling group using the
+  // existing management_nav_reorder()/POST /api/nav/reorder — this is
+  // backend capability that already existed but had no UI path to it.
+  var newParentId = target.parent_id || null;
+  if ((dragged.parent_id || null) !== newParentId){
+    var rp = await api("PUT","/api/nav/"+_navDragId, {parent_id: newParentId});
+    if (!rp.ok){ toast(rp.error||"Could not move item","err"); return; }
+  }
+
+  var siblings = _flatNavItems.filter(function(x){
+    return (x.parent_id||null) === newParentId && x.nav_id !== _navDragId;
+  }).sort(function(a,b){ return (a.position||0) - (b.position||0); });
+
+  var targetIdx = siblings.findIndex(function(x){ return x.nav_id === targetId; });
+  var insertAt = zone === "before" ? targetIdx : targetIdx + 1;
+  var order = siblings.map(function(x){ return x.nav_id; });
+  order.splice(insertAt, 0, _navDragId);
+
+  var ro = await api("POST","/api/nav/reorder", {nav_id_order: order});
+  if (ro.ok){ toast("Reordered"); loadNavMenu(); } else { toast(ro.error||"Could not reorder","err"); }
+}
+function _navDragEnd(e){
+  document.querySelectorAll(".becss-tree-row--dragging").forEach(function(el){ el.classList.remove("becss-tree-row--dragging"); });
+  _navDragId = null;
+}
+function _navTopLevelDragOver(e){
+  if (!_navDragId) return;
+  e.preventDefault();
+  e.currentTarget.classList.add("becss-tree-toplevel-zone--dragover");
+}
+function _navTopLevelDragLeave(e){
+  e.currentTarget.classList.remove("becss-tree-toplevel-zone--dragover");
+}
+async function _navTopLevelDrop(e){
+  e.preventDefault();
+  e.currentTarget.classList.remove("becss-tree-toplevel-zone--dragover");
+  if (!_navDragId) return;
+  var d = await api("PUT","/api/nav/"+_navDragId, {parent_id: null});
+  if (d.ok){ toast("Moved to top level"); loadNavMenu(); } else { toast(d.error||"Could not move item","err"); }
+}
+function _indentedNavOptions(items, excludeId, selectedId, depth, parentId){
+  depth=depth||0; parentId=parentId===undefined?null:parentId;
+  var out="";
+  items.filter(function(n){ return (n.parent_id||null)===parentId && n.nav_id!==excludeId; }).forEach(function(n){
+    out += '<option value="'+n.nav_id+'"'+(n.nav_id===selectedId?" selected":"")+'>'+"— ".repeat(depth)+esc(n.label)+'</option>';
+    out += _indentedNavOptions(items, excludeId, selectedId, depth+1, n.nav_id);
+  });
+  return out;
+}
+async function loadNavMenu(){
+  var el = document.getElementById("navmenuOut");
+  var fd = await api("GET","/api/nav");
+  _flatNavItems = fd.nav || [];
+  var td = await api("GET","/api/nav/tree");
+  var tree = td.tree || [];
+  var topLevelZone = '<div class="becss-tree-toplevel-zone" ondragover="_navTopLevelDragOver(event)" '
+    +'ondragleave="_navTopLevelDragLeave(event)" ondrop="_navTopLevelDrop(event)">'
+    +'Drag a nav item here to move it to the top level</div>';
+  el.innerHTML = topLevelZone + (tree.length ? _renderNavTree(tree) : empty("🧭","No nav items yet"));
+}
+function navItemForm(n){
+  n=n||{};
+  var parentOptions='<option value="">— Top level —</option>'+_indentedNavOptions(_flatNavItems, n.nav_id, n.parent_id);
+  // LINK-PICKER FIX (2026-07-29, requested directly): previously the
+  // only way to link a nav item to a Page or Post was to know its exact
+  // output URL and type it in by hand. Added a Link Type radio
+  // (Page / Post / Custom URL) plus a combo box populated from the real
+  // Pages/Posts lists (fetched via the existing GET /api/pages and
+  // /api/posts routes) — picking one auto-fills the URL field instead of
+  // requiring it to be typed. Defaults to "Custom URL" both for new items
+  // and when editing an existing one, since reverse-matching an
+  // arbitrary saved URL back to a specific Page/Post isn't reliable
+  // enough to guess at silently; Custom URL keeps prior behavior exactly.
+  var linkTypeRadios =
+    '<label style="margin-right:1rem"><input type="radio" name="nvf_linktype" value="custom" checked '
+    +'onchange="_navLinkTypeChanged(this.value)"> Custom URL</label>'
+    +'<label style="margin-right:1rem"><input type="radio" name="nvf_linktype" value="page" '
+    +'onchange="_navLinkTypeChanged(this.value)"> Page</label>'
+    +'<label><input type="radio" name="nvf_linktype" value="post" '
+    +'onchange="_navLinkTypeChanged(this.value)"> Post</label>';
+  return fg("Label *",'<input class="becss-form__input" id="nvf_label" value="'+esc(n.label||'')+'" placeholder="Products">')
+    +fg("Link Type", linkTypeRadios)
+    +fg("Choose Page/Post",'<select class="becss-form__select" id="nvf_picker" style="display:none" '
+      +'onchange="_navLinkPickerChanged()"><option value="">— Loading —</option></select>')
+    +fg("URL *",'<input class="becss-form__input" id="nvf_url" value="'+esc(n.url||'')+'" placeholder="/products">')
+    +fg("Target",'<select class="becss-form__select" id="nvf_target"><option value="_self"'+(n.target!=="_blank"?" selected":"")+'>Same tab</option>'
+      +'<option value="_blank"'+(n.target==="_blank"?" selected":"")+'>New tab</option></select>')
+    +fg("Parent",'<select class="becss-form__select" id="nvf_parent">'+parentOptions+'</select>')
+    +fg("Active",'<select class="becss-form__select" id="nvf_active"><option value="true"'+(n.active!==false?" selected":"")+'>Yes</option>'
+      +'<option value="false"'+(n.active===false?" selected":"")+'>No</option></select>');
+}
+var _navLinkPickerCache = {page: null, post: null};
+async function _navLinkTypeChanged(type){
+  var picker = document.getElementById("nvf_picker");
+  var urlInput = document.getElementById("nvf_url");
+  if(type === "custom"){
+    picker.style.display = "none";
+    urlInput.readOnly = false;
+    return;
+  }
+  picker.style.display = "";
+  urlInput.readOnly = true;
+  picker.innerHTML = '<option value="">— Loading —</option>';
+  if(!_navLinkPickerCache[type]){
+    var d = type === "page" ? await api("GET","/api/pages") : await api("GET","/api/posts");
+    _navLinkPickerCache[type] = (type === "page" ? d.pages : d.posts) || [];
+  }
+  var items = _navLinkPickerCache[type];
+  if(!items.length){
+    picker.innerHTML = '<option value="">— No '+(type==="page"?"pages":"posts")+' found —</option>';
+    return;
+  }
+  picker.innerHTML = '<option value="">— Choose a '+(type==="page"?"page":"post")+' —</option>'
+    + items.map(function(it){
+        var href = type === "page" ? "/"+it.slug+".html" : "/post/"+it.slug+".html";
+        return '<option value="'+esc(href)+'" data-title="'+esc(it.title||it.slug)+'">'+esc(it.title||it.slug)+'</option>';
+      }).join('');
+}
+function _navLinkPickerChanged(){
+  var picker = document.getElementById("nvf_picker");
+  var opt = picker.options[picker.selectedIndex];
+  if(!opt || !opt.value) return;
+  document.getElementById("nvf_url").value = opt.value;
+  var labelInput = document.getElementById("nvf_label");
+  if(!labelInput.value.trim()) labelInput.value = opt.getAttribute("data-title") || "";
+}
+function openAddNavItem(){ editTarget=null; _navLinkPickerCache={page:null,post:null}; openModal("Add Nav Item",navItemForm({})); }
+function editNavItem(id){
+  var n=_flatNavItems.find(function(x){return x.nav_id===id;});
+  if(!n){toast("Not found","err");return;}
+  // AUDIT FIX (M-4): _navLinkPickerCache was populated once per link-type
+  // and never refreshed, so pages/posts created after the picker's first
+  // use wouldn't appear until a full page reload. Reset it every time the
+  // Nav form opens (both add and edit) so it always refetches fresh.
+  _navLinkPickerCache={page:null,post:null};
+  editTarget={type:"navitem",id:id}; openModal("Edit Nav Item",navItemForm(n));
+}
+async function saveNavItemModal(){
+  var label=(document.getElementById("nvf_label").value||"").trim();
+  var url=(document.getElementById("nvf_url").value||"").trim();
+  if(!label||!url){toast("Label and URL required","err");return;}
+  var body={label:label, url:url, target:document.getElementById("nvf_target").value,
+    parent_id:document.getElementById("nvf_parent").value||null,
+    active:document.getElementById("nvf_active").value==="true"};
+  var d=editTarget?await api("PUT","/api/nav/"+editTarget.id,body):await api("POST","/api/nav",body);
+  if(d.ok){toast(editTarget?"Nav item updated":"Nav item added");closeModal();loadNavMenu();}
+  else toast(d.error||"Error","err");
+}
+async function delNavItem(id){
+  if(!confirm("Delete nav item? Child items will be moved to top level."))return;
+  var d=await api("DELETE","/api/nav/"+id);
+  if(d.ok){toast("Deleted");loadNavMenu();}else toast(d.error||"Error","err");
+}
+
+/* ══ SITE PREVIEW (Build panel) ══════════════════════════════ */
+async function openPreview(){
+  var resp = await fetch("/preview/index.html", {method:"GET"});
+  if (resp.status === 401){
+    // AUDIT FIX (LOW #4): this branch used to be unreachable in practice
+    // — a 401 fell into the same "Build the site first" message as a 404,
+    // which is actively misleading (nothing wrong with the build; the
+    // session's auth just needs refreshing). api() already has this exact
+    // handling; mirrored here since this is a raw fetch(), not an api()
+    // call (preview needs a real navigable URL, not JSON).
+    sessionStorage.removeItem("mgmt_cms_admin_token");
+    _showLoginGate("Session expired or invalid — enter the admin token again.");
+    return;
+  }
+  if (!resp.ok){
+    toast("Build the site first — nothing to preview yet","err");
+    return;
+  }
+  document.getElementById("previewFrame").src = "/preview/index.html?t="+Date.now();
+  document.getElementById("previewOv").classList.add("becss-preview-overlay--open");
+}
+function closePreview(){
+  document.getElementById("previewOv").classList.remove("becss-preview-overlay--open");
+  document.getElementById("previewFrame").src = "about:blank";
+}
+document.getElementById("previewOv").addEventListener("click", function(e){ if(e.target===this) closePreview(); });
+
+/* ══ MEDIA PICKER (Pages/Posts featured image — browse instead of typing a URL) ══
+   Three subtabs: Uploads (existing upload flow), YouTube, and Image Links —
+   the latter two register external URLs into the same media registry
+   (no local file), so they show up in the same picker without needing a
+   separate management surface. */
+var _mediaPickerTargetInput = null;
+var _mediaPickerTab = "uploads";
+var _mediaPickerAllMedia = [];
+
+async function openMediaPicker(targetInputId){
+  _mediaPickerTargetInput = targetInputId;
+  document.getElementById("mediaPickerUploadInput").value = "";
+  document.getElementById("mediaPickerOv").classList.add("becss-mediapicker-overlay--open");
+  _setMediaPickerTab("uploads");
+}
+function closeMediaPicker(){
+  document.getElementById("mediaPickerOv").classList.remove("becss-mediapicker-overlay--open");
+  _mediaPickerTargetInput = null;
+}
+async function _setMediaPickerTab(tab){
+  _mediaPickerTab = tab;
+  ["uploads","youtube","external_image"].forEach(function(t){
+    document.getElementById("mpTab-"+t).classList.toggle("becss-filter-bar__tab--active", t===tab);
+    document.getElementById("mpPane-"+t).style.display = (t===tab ? "" : "none");
+  });
+  document.getElementById("mediaPickerGrid").innerHTML = '<div class="becss-empty-state">Loading…</div>';
+  var d = await api("GET","/api/media");
+  _mediaPickerAllMedia = d.media || [];
+  _renderMediaPickerGrid();
+}
+function _renderMediaPickerGrid(){
+  var tab = _mediaPickerTab;
+  var items = _mediaPickerAllMedia.filter(function(m){
+    if (tab === "uploads") return m.file_type === "image" && m.url;
+    return m.file_type === tab;
+  });
+  var grid = document.getElementById("mediaPickerGrid");
+  if (!items.length){
+    var msg = tab==="uploads" ? "No images uploaded yet — use Upload & Use above"
+            : tab==="youtube" ? "No YouTube links added yet — paste one above"
+            : "No image links added yet — paste one above";
+    grid.innerHTML = empty(tab==="youtube"?"▶":"🖼", msg);
+    return;
+  }
+  grid.innerHTML = items.map(function(m){
+    var thumb = m.thumbnail_url || m.url;
+    var selectUrl = tab==="youtube" ? m.url : (m.url || m.external_url);
+    // AUDIT FIX (H-5): selectUrl was the one value in this render function
+    // NOT run through esc(), unlike title=/src=/alt= right next to it. For
+    // uploads this is a safe /media-files/<secure_filename> path, but the
+    // Image Links tab lets the user paste an arbitrary external_url.
+    // esc() here blocks the more serious half of this: a raw " in
+    // selectUrl would otherwise close the onclick="..." attribute early
+    // (HTML tokenizes attribute boundaries before decoding entities),
+    // letting an attacker inject arbitrary new attributes/elements onto
+    // this node — that's now closed. What esc() does NOT close: HTML
+    // entity-decoding of an inline event-handler attribute happens before
+    // the browser compiles it as JS, so an encoded ' can still decode back
+    // to a literal quote and break the JS-string context inside
+    // selectMediaItem('...'). That's the same latent risk every other
+    // onclick="fn('"+esc(x)+"')" call site in this file already carries —
+    // already documented as an open, file-wide issue in
+    // docs/security-notes.md, with the real fix being the CHECKLIST 1b
+    // addEventListener+dataset migration. This brings selectUrl to parity
+    // with its neighbors rather than being uniquely worse than them.
+    return '<div class="becss-mediapicker__item" onclick="selectMediaItem(\''+esc(selectUrl)+'\')" title="'+esc(m.filename)+'">'
+      +'<img src="'+esc(thumb)+'" loading="lazy" alt="'+esc(m.alt_text||m.filename)+'">'
+      +'<div class="becss-mediapicker__item-name">'+esc(m.filename)+'</div></div>';
+  }).join('');
+}
+async function _mediaPickerAddExternal(mediaType){
+  var url, extra = {};
+  if (mediaType === "youtube"){
+    url = (document.getElementById("mpYoutubeUrl").value||"").trim();
+    extra.title = (document.getElementById("mpYoutubeTitle").value||"").trim();
+  } else {
+    url = (document.getElementById("mpImageUrl").value||"").trim();
+    extra.alt_text = (document.getElementById("mpImageAlt").value||"").trim();
+  }
+  if (!url){ toast("Paste a URL first","err"); return; }
+  var d = await api("POST","/api/media/external", Object.assign({media_type: mediaType, url: url}, extra));
+  if (d.ok){
+    toast("Added");
+    if (mediaType === "youtube"){ document.getElementById("mpYoutubeUrl").value=""; document.getElementById("mpYoutubeTitle").value=""; }
+    else { document.getElementById("mpImageUrl").value=""; document.getElementById("mpImageAlt").value=""; }
+    var refreshed = await api("GET","/api/media");
+    _mediaPickerAllMedia = refreshed.media || [];
+    _renderMediaPickerGrid();
+  } else {
+    toast(d.error||"Could not add link","err");
+  }
+}
+function selectMediaItem(url){
+  if (_mediaPickerTargetInput){
+    var el = document.getElementById(_mediaPickerTargetInput);
+    if (el) el.value = url;
+  }
+  closeMediaPicker();
+}
+async function _mediaPickerUploadAndSelect(){
+  var fileInput = document.getElementById("mediaPickerUploadInput");
+  var file = fileInput.files && fileInput.files[0];
+  if (!file){ toast("Choose a file first","err"); return; }
+  var fd = new FormData();
+  fd.append("file", file);
+  var resp = await fetch("/api/media/upload", {method:"POST", headers:{"X-Admin-Token":ADMIN_TOKEN}, body:fd});
+  var d = await resp.json();
+  if (d.ok && d.media && d.media.url){
+    toast("Uploaded");
+    selectMediaItem(d.media.url);
+  } else {
+    toast(d.error||"Upload failed","err");
+  }
+}
+document.getElementById("mediaPickerOv").addEventListener("click", function(e){ if(e.target===this) closeMediaPicker(); });
+
+/* ══ FACTORY RESET (Settings → Danger Zone) ════════════════════
+   A dedicated confirm-tab flow, not the standard add/edit form: the
+   modal's Save button starts disabled and only enables once the user
+   types the exact phrase RESET into the confirmation field — a real
+   functional gate, not just a decorative warning, on top of the
+   server's own independent confirmation check. */
+function factoryResetForm(){
+  return '<div style="background:#2a0a0a;border:1px solid #DE2626;border-radius:6px;padding:.75rem;margin-bottom:.75rem;font-size:.82rem;color:#fff">'
+    +'This will permanently clear Pages, Posts, Categories, Nav, Media, Notes, Tasks, Links, '
+    +'and Settings back to a clean default install. Everything currently on disk gets backed up '
+    +'to <code>Persist/factory_reset_backups/</code> first — but this action itself cannot be undone from this UI.'
+    +'</div>'
+    +fg('Type <strong>RESET</strong> to confirm','<input class="becss-form__input" id="fr_confirm" '
+      +'placeholder="RESET" autocomplete="off" oninput="_updateFactoryResetBtn()">');
+}
+function _updateFactoryResetBtn(){
+  var v=(document.getElementById("fr_confirm").value||"").trim();
+  document.getElementById("modalSaveBtn").disabled = (v!=="RESET");
+}
+function openFactoryResetConfirm(){
+  editTarget={type:"factory-reset"};
+  openModal("⚠ Factory Reset",factoryResetForm());
+  document.getElementById("modalSaveBtn").disabled=true;
+}
+async function confirmFactoryReset(){
+  var v=(document.getElementById("fr_confirm").value||"").trim();
+  if(v!=="RESET"){ toast("Type RESET exactly to confirm","err"); return; }
+  var d=await api("POST","/api/factory-reset",{confirm:"RESET"});
+  if(d.ok){
+    closeModal();
+    toast("Factory reset complete — reloading…");
+    setTimeout(function(){ location.reload(); },900);
+  } else {
+    toast(d.error||"Reset failed","err");
+  }
+}
+
+/* ══ HELPERS ════════════════════════════════════════════════ */
+function fg(label,input){ return '<div class="becss-form__group"><label class="becss-form__label">'+label+'</label>'+input+'</div>'; }
+function empty(icon,msg){ return '<div class="becss-empty-state"><div class="becss-empty-state__icon">'+icon+'</div>'+msg+'</div>'; }
+
+/* ══ KEYBOARD ═══════════════════════════════════════════════ */
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"){ closeModal(); closeCatMgr(); closeMediaPicker(); closePreview(); }
+  if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){
+    if(document.getElementById("modalOv").classList.contains("becss-modal-overlay--open")) handleSave();
+  }
+});
+
+/* ══ INIT ═══════════════════════════════════════════════════ */
+document.addEventListener("DOMContentLoaded",function(){
+  // AUDIT FIX (H-1, round 2): don't fire off any API calls until we have
+  // a token — either from sessionStorage (returning session) or freshly
+  // entered via the login gate.
+  if (ADMIN_TOKEN){
+    renderToolbar("links"); loadLinks();
+  } else {
+    _showLoginGate();
+  }
+});
+</script>
+</body>
+</html>

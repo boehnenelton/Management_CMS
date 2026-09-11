@@ -1,0 +1,30 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "LinkCategory"
+  ],
+  "Fields": [
+    {
+      "name": "cat_id",
+      "type": "string"
+    },
+    {
+      "name": "cat_name",
+      "type": "string"
+    },
+    {
+      "name": "cat_created_at",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "e2e4264e-4190-4ab3-b659-8d736fa81a7c",
+      "Social",
+      "2026-07-31T12:00:06Z"
+    ]
+  ]
+}

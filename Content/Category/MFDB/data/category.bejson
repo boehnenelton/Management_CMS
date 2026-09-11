@@ -1,0 +1,59 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "Category"
+  ],
+  "Fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "parent_id",
+      "type": "string"
+    },
+    {
+      "name": "category_type",
+      "type": "string"
+    },
+    {
+      "name": "title",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    },
+    {
+      "name": "slug",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "ed9eb599-279c-452a-bb93-cf07b46499a9",
+      null,
+      "post",
+      "Developer Post Category",
+      "This is a test post category",
+      "Developer-Post-Category",
+      "2026-07-31T11:20:16Z"
+    ],
+    [
+      "70f6a23b-a03b-4f60-986c-b27d8d4c2a05",
+      null,
+      "page",
+      "Developer-Page-Category",
+      "This is a page test category by the developer",
+      "Developer-Page-Category",
+      "2026-07-31T11:21:34Z"
+    ]
+  ]
+}

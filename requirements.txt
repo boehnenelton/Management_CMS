@@ -1,0 +1,25 @@
+# AUDIT FIX (L-10): no dependency pinning shipped with this project — the
+# only way to know Flask/Werkzeug/Pillow were implied dependencies was to
+# read the imports. Pinned to the versions this pass was verified against;
+# bump deliberately, not by dropping the pins.
+#
+# AUDIT FIX (N-4, considered and deliberately NOT done): hash-pinning
+# (`pip install --require-hashes`) was suggested for extra supply-chain
+# integrity. Checked what that would actually take: Pillow ships
+# platform-specific wheels, and hashes generated from wherever this pass
+# ran (an x86_64 dev sandbox) would NOT match the wheel this project
+# actually needs on its real deployment target — Android/Termux, normally
+# aarch64. Shipping those hashes would make `pip install --require-hashes`
+# fail on-device, which is worse than the current unhashed-but-working
+# state. If hash pinning is wanted, generate it ON the actual target
+# device: `pip download --no-deps Flask==3.0.3 Werkzeug==3.0.4
+# Pillow==10.4.0` there, then `pip hash <file>` per wheel.
+#
+# Runtime dependencies:
+Flask==3.0.3
+Werkzeug==3.0.4
+
+# Pillow is imported by lib_bejson_Management_media.py for WebP sibling
+# generation on upload — optional at import time in that library (guarded),
+# but required for the WebP-conversion feature to actually run.
+Pillow==10.4.0

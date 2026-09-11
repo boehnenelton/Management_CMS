@@ -1,0 +1,300 @@
+#!/usr/bin/env python3
+"""
+BEJSON Management CLI — terminal-native control over this app's content.
+No web admin needed. Adapted from a third-party CLI tool evaluated for
+value; renamed out of a conflicting "CMS" family into Management, wired
+onto the merged Pages/Landing/SEO/Media/Nav libraries.
+
+Usage:
+    cms init ./my-site "My Site Name"
+    cms page create "About Us" --slug about --status published
+    cms page list
+    cms page publish <id>
+    cms category create "Blog"
+    cms seo set <page-id> --meta-title "About | My Site"
+    cms nav add "Contact" "/pages/contact.html"
+    cms link audit
+    cms build
+
+Author:  Elton Boehnen
+"""
+
+import os
+import sys
+import json as _json
+
+try:
+    import click
+except ImportError:
+    sys.stderr.write("This CLI requires 'click'. Install with: pip install click\n")
+    sys.exit(1)
+
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+_MGMT_DIR = os.path.join(_THIS_DIR, "lib", "Management")
+if _MGMT_DIR not in sys.path:
+    sys.path.insert(0, _MGMT_DIR)
+
+from lib_bejson_Management_cli import ManagementCLIProject
+
+
+def _get_project(ctx) -> ManagementCLIProject:
+    return ManagementCLIProject(ctx.obj["root"])
+
+
+def _check_exists(project: ManagementCLIProject):
+    if not project.exists():
+        click.echo("No project here. Run: cms init <path> <site-name>", err=True)
+        sys.exit(1)
+
+
+def _print_table(headers, rows):
+    widths = [max(len(str(h)), *(len(str(r[i])) for r in rows)) if rows else len(str(h)) for i, h in enumerate(headers)]
+    click.echo("  ".join(str(h).ljust(w) for h, w in zip(headers, widths)))
+    click.echo("  ".join("-" * w for w in widths))
+    for r in rows:
+        click.echo("  ".join(str(v).ljust(w) for v, w in zip(r, widths)))
+
+
+def _out(ctx, data):
+    if ctx.obj.get("as_json"):
+        click.echo(_json.dumps(data, indent=2, default=str))
+    else:
+        click.echo(data if isinstance(data, str) else _json.dumps(data, indent=2, default=str))
+
+
+@click.group()
+@click.option("--root", "-r", default=".", envvar="CMS_ROOT", help="Project root directory.")
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
+@click.pass_context
+def cli(ctx, root, as_json):
+    """Terminal-native content management — no web admin needed."""
+    ctx.ensure_object(dict)
+    ctx.obj["root"] = root
+    ctx.obj["as_json"] = as_json
+
+
+@cli.command()
+@click.argument("path")
+@click.argument("site_name")
+def init(path, site_name):
+    """Initialize a new project at PATH with SITE_NAME."""
+    project = ManagementCLIProject(path)
+    if project.exists():
+        click.echo(f"Project already exists at {path}", err=True)
+        sys.exit(1)
+    project.init_project(site_name)
+    click.echo(f"Initialized '{site_name}' at {os.path.abspath(path)}")
+
+
+@cli.group()
+def page():
+    """Page management."""
+
+
+@page.command("create")
+@click.argument("title")
+@click.option("--slug", default=None)
+@click.option("--status", type=click.Choice(["draft", "published", "archived"]), default="draft")
+@click.option("--author", default=None)
+@click.option("--content-html", default=None)
+@click.option("--category", default=None)
+@click.pass_context
+def page_create(ctx, title, slug, status, author, content_html, category):
+    project = _get_project(ctx); _check_exists(project)
+    pid = project.page_create(title, slug=slug, status=status, author=author,
+                               content_html=content_html, category=category)
+    click.echo(f"Created page {pid}")
+
+
+@page.command("list")
+@click.option("--status", type=click.Choice(["all", "draft", "published", "archived"]), default="all")
+@click.pass_context
+def page_list(ctx, status):
+    project = _get_project(ctx); _check_exists(project)
+    pages = project.page_list(status=status)
+    if ctx.obj.get("as_json"):
+        _out(ctx, pages); return
+    _print_table(["id", "title", "slug", "status"], [[p["id"][:8], p["label"], p["slug"], p["status"]] for p in pages])
+
+
+@page.command("show")
+@click.argument("page_id")
+@click.pass_context
+def page_show(ctx, page_id):
+    project = _get_project(ctx); _check_exists(project)
+    p = project.page_get(page_id)
+    if not p:
+        click.echo("Not found", err=True); sys.exit(1)
+    _out(ctx, p)
+
+
+@page.command("edit")
+@click.argument("page_id")
+@click.option("--title", default=None)
+@click.option("--slug", default=None)
+@click.option("--status", type=click.Choice(["draft", "published", "archived"]), default=None)
+@click.option("--content-html", default=None)
+@click.option("--category", default=None)
+@click.pass_context
+def page_edit(ctx, page_id, title, slug, status, content_html, category):
+    project = _get_project(ctx); _check_exists(project)
+    fields = {}
+    if title: fields["label"] = title
+    if slug: fields["slug"] = slug
+    if status: fields["status"] = status
+    if content_html is not None: fields["content_html"] = content_html
+    if category is not None: fields["category"] = category
+    ok = project.page_update(page_id, **fields)
+    click.echo("Updated" if ok else "Not found")
+
+
+@page.command("publish")
+@click.argument("page_id")
+@click.pass_context
+def page_publish(ctx, page_id):
+    project = _get_project(ctx); _check_exists(project)
+    click.echo("Published" if project.page_publish(page_id) else "Not found")
+
+
+@page.command("archive")
+@click.argument("page_id")
+@click.pass_context
+def page_archive(ctx, page_id):
+    project = _get_project(ctx); _check_exists(project)
+    click.echo("Archived" if project.page_archive(page_id) else "Not found")
+
+
+@page.command("delete")
+@click.argument("page_id")
+@click.confirmation_option(prompt="Delete this page?")
+@click.pass_context
+def page_delete(ctx, page_id):
+    project = _get_project(ctx); _check_exists(project)
+    click.echo("Deleted" if project.page_delete(page_id) else "Not found")
+
+
+@cli.group()
+def category():
+    """Page category management."""
+
+
+@category.command("create")
+@click.argument("name")
+@click.pass_context
+def category_create(ctx, name):
+    project = _get_project(ctx); _check_exists(project)
+    click.echo(f"Created category {project.category_create(name)}")
+
+
+@category.command("list")
+@click.pass_context
+def category_list(ctx):
+    project = _get_project(ctx); _check_exists(project)
+    cats = project.category_list()
+    if ctx.obj.get("as_json"):
+        _out(ctx, cats); return
+    _print_table(["cat_id", "name"], [[c["cat_id"][:8], c["cat_name"]] for c in cats])
+
+
+@category.command("delete")
+@click.argument("cat_id")
+@click.confirmation_option(prompt="Delete this category? Pages will have category unset.")
+@click.pass_context
+def category_delete(ctx, cat_id):
+    project = _get_project(ctx); _check_exists(project)
+    click.echo("Deleted" if project.category_delete(cat_id) else "Not found")
+
+
+@cli.group()
+def seo():
+    """SEO metadata management."""
+
+
+@seo.command("set")
+@click.argument("page_id")
+@click.option("--meta-title", default=None)
+@click.option("--meta-keywords", default=None)
+@click.option("--og-title", default=None)
+@click.option("--og-description", default=None)
+@click.option("--canonical-url", default=None)
+@click.pass_context
+def seo_set(ctx, page_id, meta_title, meta_keywords, og_title, og_description, canonical_url):
+    project = _get_project(ctx); _check_exists(project)
+    fields = {k: v for k, v in {
+        "meta_title": meta_title, "meta_keywords": meta_keywords, "og_title": og_title,
+        "og_description": og_description, "canonical_url": canonical_url,
+    }.items() if v is not None}
+    project.seo_set(page_id, **fields)
+    click.echo("SEO updated")
+
+
+@cli.group()
+def nav():
+    """Site navigation management."""
+
+
+@nav.command("add")
+@click.argument("label")
+@click.argument("url")
+@click.pass_context
+def nav_add(ctx, label, url):
+    project = _get_project(ctx); _check_exists(project)
+    click.echo(f"Added nav link {project.nav_add(label, url)}")
+
+
+@nav.command("list")
+@click.pass_context
+def nav_list(ctx):
+    project = _get_project(ctx); _check_exists(project)
+    items = project.nav_list()
+    if ctx.obj.get("as_json"):
+        _out(ctx, items); return
+    _print_table(["nav_id", "label", "url"], [[n["nav_id"][:8], n["nav_label"], n["nav_url"]] for n in items])
+
+
+@cli.group()
+def link():
+    """Personal links management + health checks."""
+
+
+@link.command("add")
+@click.argument("title")
+@click.argument("url")
+@click.pass_context
+def link_add(ctx, title, url):
+    project = _get_project(ctx); _check_exists(project)
+    click.echo(f"Added link {project.link_add(title, url)}")
+
+
+@link.command("list")
+@click.pass_context
+def link_list(ctx):
+    project = _get_project(ctx); _check_exists(project)
+    links = project.link_list()
+    if ctx.obj.get("as_json"):
+        _out(ctx, links); return
+    _print_table(["id", "title", "url"], [[l["id"][:8], l["label"], l["url"]] for l in links])
+
+
+@link.command("audit")
+@click.pass_context
+def link_audit(ctx):
+    project = _get_project(ctx); _check_exists(project)
+    results = project.link_audit()
+    if ctx.obj.get("as_json"):
+        _out(ctx, results); return
+    _print_table(["title", "url", "status", "reachable"],
+                 [[r["title"], r["url"], r["status_code"], r["reachable"]] for r in results])
+
+
+@cli.command()
+@click.pass_context
+def build(ctx):
+    """Build/export the static homepage."""
+    project = _get_project(ctx); _check_exists(project)
+    result = project.build_site()
+    click.echo(f"Built: {result['path']} ({result['size']} bytes)")
+
+
+if __name__ == "__main__":
+    cli()

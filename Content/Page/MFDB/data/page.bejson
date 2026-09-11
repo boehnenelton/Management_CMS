@@ -1,0 +1,113 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "Page"
+  ],
+  "Fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "category_id_fk",
+      "type": "string"
+    },
+    {
+      "name": "slug",
+      "type": "string"
+    },
+    {
+      "name": "status",
+      "type": "string"
+    },
+    {
+      "name": "page_type",
+      "type": "string"
+    },
+    {
+      "name": "meta_description",
+      "type": "string"
+    },
+    {
+      "name": "layout",
+      "type": "string"
+    },
+    {
+      "name": "content_html",
+      "type": "string"
+    },
+    {
+      "name": "content_markdown",
+      "type": "string"
+    },
+    {
+      "name": "author",
+      "type": "string"
+    },
+    {
+      "name": "featured_image",
+      "type": "string"
+    },
+    {
+      "name": "parent_page_id_fk",
+      "type": "string"
+    },
+    {
+      "name": "sort_order",
+      "type": "integer"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    },
+    {
+      "name": "updated_at",
+      "type": "string"
+    },
+    {
+      "name": "title",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "679609cf-979c-41b0-ae54-bb4284ce0323",
+      null,
+      "Contact-Page-Test",
+      "published",
+      "contact",
+      "contact page test",
+      "default",
+      "<p>Testing the contact page type...</p>",
+      "",
+      "Boehnenelton2024",
+      "",
+      null,
+      0,
+      "2026-07-31T11:24:16Z",
+      "2026-07-31T11:24:16Z",
+      "Contact Page Test"
+    ],
+    [
+      "30d5561b-dc49-4342-b308-f7a17a263e19",
+      null,
+      "About-Page-Test",
+      "published",
+      "about",
+      "About test page",
+      "default",
+      "<p>about</p>",
+      "",
+      "Boehnenelton2024",
+      "/media-files/1000744483.png",
+      null,
+      0,
+      "2026-07-31T11:26:21Z",
+      "2026-07-31T11:26:21Z",
+      "About Page Test"
+    ]
+  ]
+}

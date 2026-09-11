@@ -1,0 +1,85 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "Post"
+  ],
+  "Fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "category_id_fk",
+      "type": "string"
+    },
+    {
+      "name": "title",
+      "type": "string"
+    },
+    {
+      "name": "slug",
+      "type": "string"
+    },
+    {
+      "name": "status",
+      "type": "string"
+    },
+    {
+      "name": "content_html",
+      "type": "string"
+    },
+    {
+      "name": "content_markdown",
+      "type": "string"
+    },
+    {
+      "name": "author",
+      "type": "string"
+    },
+    {
+      "name": "featured_image",
+      "type": "string"
+    },
+    {
+      "name": "published_at",
+      "type": "string"
+    },
+    {
+      "name": "scheduled_at",
+      "type": "string"
+    },
+    {
+      "name": "tag_ids",
+      "type": "array"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    },
+    {
+      "name": "updated_at",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "2108b3dc-7e49-4a0d-8809-4badf974eb9d",
+      "ed9eb599-279c-452a-bb93-cf07b46499a9",
+      "Test Blog Post",
+      "Test-Blog-Post",
+      "published",
+      "<h2>Post Title Test</h2>\n\n<p>Test blog post...</p>\n<p>Test blog post p2...</p>\n<p>Test blog post, paragraph three, for pagination/layout testing.</p>",
+      "",
+      "Boehnenelton2024",
+      "/media-files/1000754777.webp",
+      "2026-07-31T11:49:58Z",
+      "",
+      [],
+      "2026-07-31T11:49:58Z",
+      "2026-08-21T09:12:43Z"
+    ]
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "ComponentMap"
+  ],
+  "Fields": [
+    {
+      "name": "component_id",
+      "type": "string"
+    },
+    {
+      "name": "component_label",
+      "type": "string"
+    },
+    {
+      "name": "html_skeleton_id_fk",
+      "type": "string"
+    },
+    {
+      "name": "css_skeleton_id_fk",
+      "type": "string"
+    },
+    {
+      "name": "js_skeleton_id_fk",
+      "type": "string"
+    },
+    {
+      "name": "component_version",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "app_shell",
+      "App Shell",
+      "sk_html_app_shell_9bbe256e",
+      "sk_css_app_shell_232ff09e",
+      null,
+      "1.0.0",
+      "2026-07-04T06:56:08Z"
+    ],
+    [
+      "management_cms_home",
+      "Home Page",
+      "sk_html_management_cms_home_2b49b928",
+      null,
+      null,
+      "1.0.0",
+      "2026-07-18T09:41:37Z"
+    ],
+    [
+      "management_cms_page",
+      "Page",
+      "sk_html_management_cms_page_00ef5ca3",
+      null,
+      null,
+      "1.0.0",
+      "2026-07-18T09:41:37Z"
+    ],
+    [
+      "management_cms_post",
+      "Post",
+      "sk_html_management_cms_post_9e4de016",
+      null,
+      null,
+      "1.0.0",
+      "2026-07-18T09:41:37Z"
+    ],
+    [
+      "management_cms_category_archive",
+      "Category Archive",
+      "sk_html_management_cms_category_archive_e001d423",
+      null,
+      null,
+      "1.0.0",
+      "2026-07-18T09:41:37Z"
+    ],
+    [
+      "management_cms_tag_archive",
+      "Tag Archive",
+      "sk_html_management_cms_tag_archive_db017f47",
+      null,
+      null,
+      "1.0.0",
+      "2026-07-18T09:41:37Z"
+    ],
+    [
+      "management_cms_404",
+      "404 Not Found",
+      "sk_html_management_cms_404_a1f2b3c4",
+      null,
+      null,
+      "1.0.0",
+      "2026-08-19T00:00:00Z"
+    ]
+  ]
+}

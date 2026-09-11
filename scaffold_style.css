@@ -1,0 +1,172 @@
+/*
+ * ============================================================
+ * File:         scaffold_style.css
+ * Description:  Management_CMS extracted design system.
+ *               White / Black / #DE2626. Inter + Source Code Pro.
+ *               Sidebar desktop, hamburger mobile.
+ * Version:      1.0.0
+ * Date:         2026-06-27
+ * Author:       Elton Boehnen
+ * Contact:      eltonboehnen@gmail.com
+ * Site:         boehnenelton2024.pages.dev
+ * GitHub:       github.com/boehnenelton
+ * RELATIONAL_ID: b2f4d1a7-3c8e-4f9b-a05d-7e6c2b1d4f83
+ * ============================================================
+ *
+ * FONTS — add to HTML <head>:
+ *   <link rel="preconnect" href="https://fonts.googleapis.com">
+ *   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700
+ *               &family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+ */
+
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Tokens ── */
+:root{
+  --bg:#fff;
+  --surface:#f5f5f5;
+  --surface2:#ececec;
+  --border:#e2e2e2;
+  --text:#000;
+  --muted:#777;
+  --red:#DE2626;     /* accent — never black font on red bg */
+  --red-h:#c01f1f;
+  --white:#fff;      /* font on red or black */
+  --font:'Inter',system-ui,sans-serif;
+  --mono:'Source Code Pro',monospace;
+  --r:6px;
+  --r-lg:9px;
+  --sidebar:220px;
+  --header-h:50px;
+  --toolbar-h:42px;
+}
+
+/* ── Base ── */
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);
+  display:flex;flex-direction:column;font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+code,.mono{font-family:var(--mono)}
+
+/* ── Header ── */
+.app-header{height:var(--header-h);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 .9rem;gap:.7rem;flex-shrink:0;z-index:50}
+.app-title{font-size:.9rem;font-weight:700;letter-spacing:-.02em}
+.app-version{font-size:.68rem;color:var(--muted);font-family:var(--mono)}
+.hamburger{display:none;background:none;border:none;cursor:pointer;
+  padding:.25rem;color:var(--text);line-height:0}
+
+/* ── Shell ── */
+.app-shell{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:var(--sidebar);flex-shrink:0;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;background:var(--bg);overflow-y:auto}
+.sidebar-nav{padding:.6rem .4rem;display:flex;flex-direction:column;gap:.1rem}
+.nav-btn{display:flex;align-items:center;gap:.55rem;padding:.5rem .7rem;
+  border-radius:var(--r);border:none;background:none;cursor:pointer;
+  font-family:var(--font);font-size:.82rem;font-weight:500;color:var(--text);
+  width:100%;text-align:left;transition:background .1s}
+.nav-btn:hover{background:var(--surface)}
+.nav-btn.active{background:var(--red);color:var(--white)}
+.nav-icon{font-size:.95rem;width:1.1rem;text-align:center;flex-shrink:0}
+.sidebar-system{margin-top:auto;border-top:1px solid var(--border);padding:.4rem}
+.sidebar-foot{padding:.65rem .75rem;border-top:1px solid var(--border);
+  font-size:.67rem;color:var(--muted);line-height:1.6}
+
+/* ── Main ── */
+.app-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ── Toolbar ── */
+.toolbar{height:var(--toolbar-h);flex-shrink:0;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.4rem;padding:0 .9rem;overflow-x:auto;white-space:nowrap}
+.toolbar::-webkit-scrollbar{display:none}
+.tbtn{display:inline-flex;align-items:center;gap:.3rem;padding:.28rem .65rem;
+  border-radius:var(--r);border:1px solid var(--border);background:var(--bg);
+  font-family:var(--font);font-size:.75rem;font-weight:500;cursor:pointer;
+  color:var(--text);white-space:nowrap;transition:background .1s,border-color .1s}
+.tbtn:hover{background:var(--surface);border-color:#bbb}
+.tbtn.tbtn-pri{background:var(--red);border-color:var(--red);color:var(--white)}
+.tbtn.tbtn-pri:hover{background:var(--red-h)}
+.tbtn.tbtn-danger:hover{background:#fff0f0;border-color:var(--red);color:var(--red)}
+.tb-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;margin:0 .1rem}
+
+/* ── Content ── */
+.app-content{flex:1;overflow-y:auto;padding:1.25rem 1.4rem}
+.panel{display:none}.panel.active{display:block}
+
+/* ── Section head ── */
+.sec-head{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.9rem;padding-bottom:.3rem;border-bottom:1px solid var(--border)}
+
+/* ── Card base ── */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);
+  padding:.75rem .9rem;position:relative;transition:border-color .12s}
+.card:hover{border-color:#aaa}
+.card-acts{position:absolute;top:.4rem;right:.4rem;display:flex;gap:.2rem;
+  opacity:0;transition:opacity .12s}
+.card:hover .card-acts{opacity:1}
+.act-btn{width:22px;height:22px;border-radius:3px;border:1px solid var(--border);
+  background:var(--bg);cursor:pointer;font-size:.65rem;
+  display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .1s}
+.act-btn.act-edit:hover{border-color:#3b82f6;color:#3b82f6;background:#eff6ff}
+.act-btn.act-del:hover{border-color:var(--red);color:var(--red);background:#fff0f0}
+
+/* ── Modal ── */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;
+  display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-ov.open{display:flex}
+.modal{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:1.35rem;width:100%;max-width:440px;box-shadow:0 8px 30px rgba(0,0,0,.1)}
+.modal-title{font-size:.9rem;font-weight:700;margin-bottom:.9rem}
+
+/* ── Forms ── */
+.form-grp{display:flex;flex-direction:column;gap:.25rem;margin-bottom:.65rem}
+.form-lbl{font-size:.74rem;font-weight:600;color:var(--muted)}
+.form-in,.form-sel,.form-ta{padding:.4rem .6rem;border:1px solid var(--border);
+  border-radius:var(--r);font-family:var(--font);font-size:.82rem;
+  background:#fff;color:#000;width:100%;transition:border-color .1s}
+.form-in:focus,.form-sel:focus,.form-ta:focus{outline:none;border-color:var(--red)}
+.form-ta{resize:vertical;min-height:80px;font-family:var(--mono);font-size:.77rem}
+.form-row{display:flex;gap:.5rem}.form-row .form-grp{flex:1}
+.modal-acts{display:flex;justify-content:flex-end;gap:.4rem;margin-top:.4rem}
+
+/* ── Buttons ── */
+.btn{padding:.35rem .85rem;border-radius:var(--r);border:1px solid var(--border);
+  font-family:var(--font);font-size:.8rem;font-weight:500;cursor:pointer;
+  background:var(--bg);color:var(--text);transition:background .1s}
+.btn:hover{background:var(--surface)}
+.btn.btn-pri{background:var(--red);border-color:var(--red);color:var(--white)}
+.btn.btn-pri:hover{background:var(--red-h)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:1rem;right:1rem;z-index:500;padding:.5rem .9rem;
+  border-radius:var(--r);font-size:.8rem;font-weight:500;background:#111;color:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);transform:translateY(.8rem);opacity:0;
+  transition:all .18s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.toast-ok{background:#166534}
+.toast.toast-err{background:var(--red)}
+
+/* ── Swatches ── */
+.swatches{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.25rem}
+.swatch{width:22px;height:22px;border-radius:3px;cursor:pointer;border:2px solid transparent}
+.swatch.sel{border-color:var(--red)}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted);font-size:.82rem}
+.empty-ico{font-size:1.8rem;margin-bottom:.4rem}
+
+/* ── Mobile ── */
+.sidebar-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:90}
+@media(max-width:700px){
+  :root{--sidebar:230px}
+  .hamburger{display:flex}
+  .sidebar{position:fixed;left:0;top:var(--header-h);bottom:0;z-index:100;
+    transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 14px rgba(0,0,0,.07)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-ov.open{display:block}
+  .app-content{padding:1rem}
+}

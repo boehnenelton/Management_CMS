@@ -1,0 +1,13 @@
+# AUDIT FIX (N-1, defensive hardening): app.py's comment on ADMIN_TOKEN
+# has said "persisted to config/admin_token.txt (gitignored-by-convention,
+# not committed)" since the H-1 round-2 auth fix, but no .gitignore file
+# ever existed to back that claim up. Verified this project's actually-
+# delivered packages never contained the token (grepped every zip
+# delivered so far for "token" -- zero hits each time), so this wasn't an
+# active leak, but the audit calling out that the *convention* was never
+# backed by an actual file was correct and worth closing regardless.
+config/admin_token.txt
+
+__pycache__/
+*.pyc
+.DS_Store

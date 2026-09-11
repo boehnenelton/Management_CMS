@@ -1,0 +1,92 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "Page"
+  ],
+  "Fields": [
+    {
+      "name": "taxonomy",
+      "type": "string"
+    },
+    {
+      "name": "type",
+      "type": "string"
+    },
+    {
+      "name": "category",
+      "type": "string"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "label",
+      "type": "string"
+    },
+    {
+      "name": "idx_position",
+      "type": "integer"
+    },
+    {
+      "name": "idx_sorting",
+      "type": "string"
+    },
+    {
+      "name": "active",
+      "type": "boolean"
+    },
+    {
+      "name": "hidden",
+      "type": "boolean"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    },
+    {
+      "name": "slug",
+      "type": "string"
+    },
+    {
+      "name": "status",
+      "type": "string"
+    },
+    {
+      "name": "meta_description",
+      "type": "string"
+    },
+    {
+      "name": "layout",
+      "type": "string"
+    },
+    {
+      "name": "content_html",
+      "type": "string"
+    },
+    {
+      "name": "content_markdown",
+      "type": "string"
+    },
+    {
+      "name": "author",
+      "type": "string"
+    },
+    {
+      "name": "featured_image",
+      "type": "string"
+    },
+    {
+      "name": "parent_page_id_fk",
+      "type": "string"
+    },
+    {
+      "name": "sort_order",
+      "type": "integer"
+    }
+  ],
+  "Values": []
+}

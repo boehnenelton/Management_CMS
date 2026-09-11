@@ -1,0 +1,59 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104a",
+  "Format_Creator": "Elton Boehnen",
+  "MFDB_Version": "1.31",
+  "Network_Role": "Master",
+  "DB_Name": "Links MFDB",
+  "DB_Description": "Templated MFDB for taxonomy: Links",
+  "Schema_Version": "1.0.0",
+  "Author": "Elton Boehnen",
+  "Created_At": "2026-07-31T11:17:43Z",
+  "Records_Type": [
+    "mfdb"
+  ],
+  "Fields": [
+    {
+      "name": "entity_name",
+      "type": "string"
+    },
+    {
+      "name": "file_path",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    },
+    {
+      "name": "record_count",
+      "type": "integer"
+    },
+    {
+      "name": "schema_version",
+      "type": "string"
+    },
+    {
+      "name": "primary_key",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "Link",
+      "data/link.bejson",
+      null,
+      1,
+      "1.0",
+      null
+    ],
+    [
+      "LinkCategory",
+      "data/linkcategory.bejson",
+      null,
+      1,
+      "1.0",
+      "cat_id"
+    ]
+  ]
+}
