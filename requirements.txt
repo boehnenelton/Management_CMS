@@ -13,7 +13,7 @@
 # fail on-device, which is worse than the current unhashed-but-working
 # state. If hash pinning is wanted, generate it ON the actual target
 # device: `pip download --no-deps Flask==3.0.3 Werkzeug==3.0.4
-# Pillow==10.4.0` there, then `pip hash <file>` per wheel.
+# Pillow==12.3.0` there, then `pip hash <file>` per wheel.
 #
 # Runtime dependencies:
 Flask==3.0.3
@@ -22,4 +22,4 @@ Werkzeug==3.0.4
 # Pillow is imported by lib_bejson_Management_media.py for WebP sibling
 # generation on upload — optional at import time in that library (guarded),
 # but required for the WebP-conversion feature to actually run.
-Pillow==10.4.0
+Pillow==12.3.0
