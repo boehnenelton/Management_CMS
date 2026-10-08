@@ -136,7 +136,7 @@ import os
 import sys
 import shutil
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 LIB_DIR = os.path.dirname(os.path.abspath(__file__))
 CORE_DIR = os.path.normpath(os.path.join(LIB_DIR, "..", "Core"))
@@ -154,7 +154,7 @@ import lib_bejson_Management_feed as Feed
 import lib_bejson_Management_media_cms as Media
 import lib_bejson_Management_init as Init
 from lib_bejson_Management_shared import (
-    management_cms_shared_esc, management_cms_shared_fmt_date,
+    management_cms_shared_esc, management_cms_shared_fmt_date, management_cms_shared_now_iso,
     management_cms_shared_excerpt, management_cms_shared_render_feed,
     management_cms_shared_paginate, management_cms_shared_render_pagination_nav,
     management_cms_shared_export_media_url, management_cms_shared_youtube_id,
@@ -257,22 +257,87 @@ def management_cms_render_layout(component_id: str, token_map: Dict[str, Any],
 # PAGE / POST BUILDERS
 # =============================================================================
 
+def _management_cms_build_breadcrumb_html(crumbs: List[Tuple[str, Optional[str]]]) -> str:
+    """
+    FEATURE #25 (2026-09-12): shared breadcrumb renderer for the page,
+    post, category-archive, and tag-archive skeletons — replaces the
+    hardcoded "{{site_title}} / {{current_title}}" two-level breadcrumb
+    that was baked directly into each skeleton with a real, possibly
+    3-level trail (site / category / current). Reuses the exact markup
+    shape (.becss-c-breadcrumbs nav, <span>/</span> separators, the same
+    inline color:var(--white) treatment for the current/non-link item)
+    the skeletons already had, so no new CSS is needed — see
+    .becss-c-breadcrumbs in each skeleton's own <style> block. crumbs is
+    (label, url) pairs; the last crumb is always rendered as plain text
+    regardless of whether a url was supplied, since it represents the
+    current page and is never meant to be a link to itself.
+    """
+    parts = []
+    last_i = len(crumbs) - 1
+    for i, (label, url) in enumerate(crumbs):
+        if url and i != last_i:
+            parts.append(f'<a href="{management_cms_shared_esc(url)}">{management_cms_shared_esc(label)}</a>')
+        else:
+            parts.append(f'<span style="color:var(--white)">{management_cms_shared_esc(label)}</span>')
+    return '<nav class="becss-c-breadcrumbs">' + '<span>/</span>'.join(parts) + '</nav>'
+
+
 def _management_cms_build_page(page: Dict[str, Any], category_lookup: Dict[str, str],
                                 site_config: Dict[str, Any], root_manifest_path: Optional[str],
-                                nav_html: str = "") -> str:
-    category_title = category_lookup.get(page.get("category_id_fk", ""), "")
+                                nav_html: str = "", category_slug_lookup: Optional[Dict[str, str]] = None,
+                                page_manifest_path: Optional[str] = None) -> str:
+    category_id = page.get("category_id_fk", "")
+    category_title = category_lookup.get(category_id, "")
     site_url = management_cms_shared_export_site_url(site_config)  # AUDIT FIX (BLD-01)
     slug = page.get("slug", "")
+    site_title = site_config.get("site_title", "")
+    page_title = page.get("title") or page.get("slug", "")
+    # FEATURE #25 (2026-09-12): category crumb only if this page actually
+    # has one — Pages aren't required to belong to a category.
+    crumbs: List[Tuple[str, Optional[str]]] = [(site_title, "/index.html")]
+    if category_id and category_title:
+        cat_slug = (category_slug_lookup or {}).get(category_id, "")
+        crumbs.append((category_title, f"/page-category/{cat_slug}.html" if cat_slug else None))
+    crumbs.append((page_title, None))
+    # FEATURE #16 (2026-09-12): PageSeo overrides, when a row exists for
+    # this page. seo.meta_title (despite the name) is PageSeo's only
+    # description-length free-text field — PAGE_SEO_FIELDS has no
+    # separate meta_description of its own — so per the spec this is
+    # what overrides the <meta name="description"> tag, not the page's
+    # own meta_description field; og_title/og_description/canonical_url
+    # map onto their own same-named tokens straightforwardly.
+    seo = Content.management_cms_content_seo_get(page_manifest_path, page.get("id", "")) if page_manifest_path else None
+    meta_description = page.get("meta_description", "")
+    og_title = page_title
+    og_description = page.get("meta_description", "")
+    canonical = f"{site_url}/{slug}.html"
+    meta_keywords_html = ""
+    robots_html = ""
+    if seo:
+        if seo.get("meta_title"):
+            meta_description = seo["meta_title"]
+        if seo.get("og_title"):
+            og_title = seo["og_title"]
+        if seo.get("og_description"):
+            og_description = seo["og_description"]
+        if seo.get("canonical_url"):
+            canonical = seo["canonical_url"]
+        if seo.get("meta_keywords"):
+            meta_keywords_html = f'<meta name="keywords" content="{management_cms_shared_esc(seo["meta_keywords"])}">'
+        if seo.get("robots_directive"):
+            robots_html = f'<meta name="robots" content="{management_cms_shared_esc(seo["robots_directive"])}">'
     token_map = {
-        "title": page.get("title") or page.get("slug", ""), "content_html": page.get("content_html", ""),
-        "meta_description": page.get("meta_description", ""), "category_title": category_title,
+        "title": page_title, "content_html": page.get("content_html", ""),
+        "meta_description": meta_description, "category_title": category_title,
         "footer_html": management_cms_shared_build_footer_html(site_config),
-        "site_title": site_config.get("site_title", ""), "nav_html": nav_html,
+        "site_title": site_title, "nav_html": nav_html,
+        "breadcrumb_html": _management_cms_build_breadcrumb_html(crumbs),
+        "meta_keywords_html": meta_keywords_html, "robots_html": robots_html,
         # SEO/SOCIAL-SHARING FIX (2026-07-27): tokens consumed by the OG
         # meta block in app.py's page_shell().
-        "og_title": page.get("title") or page.get("slug", ""),
-        "og_description": page.get("meta_description", ""),
-        "canonical_url": f"{site_url}/{slug}.html",
+        "og_title": og_title,
+        "og_description": og_description,
+        "canonical_url": canonical,
     }
     return management_cms_render_layout("management_cms_page", token_map, root_manifest_path)
 
@@ -304,7 +369,7 @@ def _management_cms_build_related_posts_html(post: Dict[str, Any], all_posts: Li
         management_cms_shared_render_feed_card(
             r.get("title", ""), f'/post/{r.get("slug", "")}.html',
             management_cms_shared_fmt_date(r.get("published_at", ""), "%b %d, %Y"),
-            management_cms_shared_excerpt(r.get("content_html", "")),
+            management_cms_shared_excerpt(r.get("content_html", ""), explicit_excerpt=r.get("excerpt", "")),
             *management_cms_shared_export_thumbnail(r.get("featured_image", "")),
         )
         for r in related
@@ -320,8 +385,10 @@ def _management_cms_build_related_posts_html(post: Dict[str, Any], all_posts: Li
 def _management_cms_build_post(post: Dict[str, Any], category_lookup: Dict[str, str],
                                 tag_lookup: Dict[str, str], site_config: Dict[str, Any],
                                 root_manifest_path: Optional[str], nav_html: str = "",
-                                all_posts: Optional[List[Dict[str, Any]]] = None) -> str:
-    category_title = category_lookup.get(post.get("category_id_fk", ""), "")
+                                all_posts: Optional[List[Dict[str, Any]]] = None,
+                                category_slug_lookup: Optional[Dict[str, str]] = None) -> str:
+    category_id = post.get("category_id_fk", "")
+    category_title = category_lookup.get(category_id, "")
     tag_names = ", ".join(tag_lookup.get(tid, "") for tid in (post.get("tag_ids") or []))
 
     # PROFESSIONAL-POLISH FIX (2026-07-22, requested after live-site review):
@@ -396,6 +463,12 @@ def _management_cms_build_post(post: Dict[str, Any], category_lookup: Dict[str, 
 
     site_url = management_cms_shared_export_site_url(site_config)  # AUDIT FIX (BLD-01)
     slug = post.get("slug", "")
+    # FEATURE #25 (2026-09-12): category crumb only if this post has one.
+    crumbs: List[Tuple[str, Optional[str]]] = [(site_config.get("site_title", ""), "/index.html")]
+    if category_id and category_title:
+        cat_slug = (category_slug_lookup or {}).get(category_id, "")
+        crumbs.append((category_title, f"/post-category/{cat_slug}.html" if cat_slug else None))
+    crumbs.append((post.get("title", ""), None))
     token_map = {
         "title": post.get("title", ""), "content_html": content_with_toc,
         "author": post.get("author", ""), "published_at": post.get("published_at", ""),
@@ -405,12 +478,13 @@ def _management_cms_build_post(post: Dict[str, Any], category_lookup: Dict[str, 
         "toc_html": toc_html, "related_posts_html": related_posts_html,
         "footer_html": management_cms_shared_build_footer_html(site_config),
         "site_title": site_config.get("site_title", ""), "nav_html": nav_html,
+        "breadcrumb_html": _management_cms_build_breadcrumb_html(crumbs),
         # SEO/SOCIAL-SHARING FIX (2026-07-27): tokens consumed by the OG
         # meta block in app.py's page_shell(). og:description reuses the
         # same excerpt helper as the feed cards (management_cms_shared_excerpt())
         # instead of dumping raw content_html into a meta attribute.
         "og_title": post.get("title", ""),
-        "og_description": management_cms_shared_excerpt(post.get("content_html", "")),
+        "og_description": management_cms_shared_excerpt(post.get("content_html", ""), explicit_excerpt=post.get("excerpt", "")),
         "canonical_url": f"{site_url}/post/{slug}.html",
     }
     return management_cms_render_layout("management_cms_post", token_map, root_manifest_path)
@@ -437,7 +511,7 @@ def _management_cms_build_category_page(category: Dict[str, Any], posts: List[Di
             "title": p.get("title", ""),
             "url": f'{item_url_prefix}{p.get("slug", "")}.html',
             "meta": management_cms_shared_fmt_date(p.get("published_at") or p.get("created_at", ""), "%b %d, %Y"),  # this builder is reused for Page categories too (Pages have no published_at)
-            "excerpt": management_cms_shared_excerpt(p.get("content_html", "")),
+            "excerpt": management_cms_shared_excerpt(p.get("content_html", ""), explicit_excerpt=p.get("excerpt", "")),
             "thumbnail": management_cms_shared_export_thumbnail(p.get("featured_image", ""))[0],  # AUDIT FIX (M-1, media-url rewrite + YouTube thumbnail)
             "is_video": management_cms_shared_export_thumbnail(p.get("featured_image", ""))[1],
         }
@@ -454,10 +528,16 @@ def _management_cms_build_category_page(category: Dict[str, Any], posts: List[Di
     post_list_html = management_cms_shared_render_feed(items, empty_message) + pagination_html
     site_url = management_cms_shared_export_site_url(site_config)  # AUDIT FIX (BLD-01)
     url_prefix = "/post-category/" if category.get("category_type") == "post" else "/page-category/"
+    # FEATURE #25 (2026-09-12): two-level crumb — site / category (current).
+    crumbs: List[Tuple[str, Optional[str]]] = [
+        (site_config.get("site_title", ""), "/index.html"),
+        (category.get("title", ""), None),
+    ]
     token_map = {
         "category_title": category.get("title", ""), "category_description": category.get("description", ""),
         "post_list_html": post_list_html, "site_title": site_config.get("site_title", ""), "nav_html": nav_html,
         "footer_html": management_cms_shared_build_footer_html(site_config),
+        "breadcrumb_html": _management_cms_build_breadcrumb_html(crumbs),
         # SEO/SOCIAL-SHARING FIX (2026-07-27): tokens consumed by the OG
         # meta block in app.py's page_shell().
         "og_title": category.get("title", ""), "og_description": category.get("description", ""),
@@ -474,7 +554,7 @@ def _management_cms_build_tag_page(tag: Dict[str, Any], posts: List[Dict[str, An
             "title": p.get("title", ""),
             "url": f'/post/{p.get("slug", "")}.html',
             "meta": management_cms_shared_fmt_date(p.get("published_at") or p.get("created_at", ""), "%b %d, %Y"),  # this builder is reused for Page categories too (Pages have no published_at)
-            "excerpt": management_cms_shared_excerpt(p.get("content_html", "")),
+            "excerpt": management_cms_shared_excerpt(p.get("content_html", ""), explicit_excerpt=p.get("excerpt", "")),
             "thumbnail": management_cms_shared_export_thumbnail(p.get("featured_image", ""))[0],  # AUDIT FIX (M-1, media-url rewrite + YouTube thumbnail)
             "is_video": management_cms_shared_export_thumbnail(p.get("featured_image", ""))[1],
         }
@@ -482,10 +562,16 @@ def _management_cms_build_tag_page(tag: Dict[str, Any], posts: List[Dict[str, An
     ]
     post_list_html = management_cms_shared_render_feed(items, "No posts with this tag yet.") + pagination_html
     site_url = management_cms_shared_export_site_url(site_config)  # AUDIT FIX (BLD-01)
+    # FEATURE #25 (2026-09-12): two-level crumb — site / #tag (current).
+    crumbs: List[Tuple[str, Optional[str]]] = [
+        (site_config.get("site_title", ""), "/index.html"),
+        (f"#{tag.get('name', '')}", None),
+    ]
     token_map = {
         "tag_name": tag.get("name", ""), "post_list_html": post_list_html,
         "site_title": site_config.get("site_title", ""), "nav_html": nav_html,
         "footer_html": management_cms_shared_build_footer_html(site_config),
+        "breadcrumb_html": _management_cms_build_breadcrumb_html(crumbs),
         # SEO/SOCIAL-SHARING FIX (2026-07-27): tokens consumed by the OG
         # meta block in app.py's page_shell().
         "og_title": f"#{tag.get('name', '')}", "og_description": "",
@@ -687,9 +773,31 @@ def _management_cms_build_category_sidebar_html(category_manifest_path: str) -> 
 # SITEMAP / ROBOTS / MEDIA
 # =============================================================================
 
-def _management_cms_build_sitemap(site_url: str, urls: List[str]) -> str:
+def _management_cms_build_sitemap(site_url: str, urls: List[Dict[str, Any]]) -> str:
+    """
+    FEATURE #19 (2026-09-12): url entries are now dicts —
+    {"path", "lastmod", "changefreq", "priority"} — instead of bare path
+    strings, so each <url> block can carry the three standard sitemap
+    hint elements instead of just <loc>. lastmod is date-only
+    (YYYY-MM-DD, a valid W3C Datetime). changefreq/priority are fixed
+    per content type (see call sites in management_cms_static_build())
+    rather than computed — accurate enough at this scale, and avoids
+    inventing a popularity/freshness heuristic nothing here needs.
+    """
     site_url = site_url.rstrip("/")
-    entries = "".join(f"  <url><loc>{management_cms_shared_esc(site_url + u)}</loc></url>\n" for u in urls)
+    parts = []
+    for u in urls:
+        loc = management_cms_shared_esc(site_url + u["path"])
+        block = f"  <url><loc>{loc}</loc>"
+        if u.get("lastmod"):
+            block += f"<lastmod>{u['lastmod']}</lastmod>"
+        if u.get("changefreq"):
+            block += f"<changefreq>{u['changefreq']}</changefreq>"
+        if u.get("priority"):
+            block += f"<priority>{u['priority']}</priority>"
+        block += "</url>\n"
+        parts.append(block)
+    entries = "".join(parts)
     return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{entries}</urlset>'
 
 
@@ -722,13 +830,18 @@ CMS_FEED_PAGE_SIZE = 10  # posts per page — homepage, category, and tag archiv
 
 
 def _management_cms_write_paginated_feed(items: list, url_base: str, out_first_page: Path,
-                                          build_fn) -> List[str]:
+                                          build_fn, changefreq: str = "monthly",
+                                          priority: str = "0.5", lastmod: str = "") -> List[Dict[str, Any]]:
     """
     Writes a feed as one or more pages. Page 1 goes to out_first_page
     (e.g. .../post-category/news.html); page 2+ goes to
     {url_base}/page/{n}.html (e.g. /post-category/news/page/2.html).
     build_fn(page_items, pagination_html) -> the rendered HTML for that page.
-    Returns the list of URLs actually written (relative, leading "/").
+    Returns the list of URL entries actually written, each
+    {"path", "lastmod", "changefreq", "priority"} — see FEATURE #19
+    (2026-09-12). A listing page (category/tag archive, homepage feed)
+    isn't tied to one entity's updated_at, so lastmod is the caller-
+    supplied build-time date, uniform across every page of the listing.
     Added 2026-07-28 — shared by the category archive, tag archive, and
     homepage-feed write loops in management_cms_static_build() so all
     three paginate the same way instead of three separate
@@ -749,7 +862,10 @@ def _management_cms_write_paginated_feed(items: list, url_base: str, out_first_p
             page_dir.mkdir(parents=True, exist_ok=True)
             target = page_dir / f"{i}.html"
         target.write_text(html, encoding="utf-8")
-        written_urls.append(url_fn(i))
+        written_urls.append({
+            "path": url_fn(i), "lastmod": lastmod,
+            "changefreq": changefreq, "priority": priority,
+        })
     return written_urls
 
 
@@ -881,6 +997,16 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
     # human-facing {{category_title}} token, never for URL/slug purposes.
     category_lookup = Taxonomy.management_cms_taxonomy_get_category_title_map(category_manifest_path)
     tag_lookup = Taxonomy.management_cms_taxonomy_get_tag_slug_map(post_manifest_path)
+    # FEATURE #25 (2026-09-12): breadcrumbs need the category's slug (for
+    # its /post-category/ or /page-category/ link), not its title —
+    # management_cms_taxonomy_get_category_slug_map() already existed,
+    # unused since the M-3 fix above redirected category_lookup to the
+    # title map. Deliberately a separate variable, not a repurposing of
+    # category_lookup, for the same reason M-3 itself gives: conflating
+    # a title lookup and a slug lookup is exactly the bug that fix
+    # corrected. Covers post-type and page-type categories alike, since
+    # Category rows for both types share one manifest.
+    category_slug_lookup = Taxonomy.management_cms_taxonomy_get_category_slug_map(category_manifest_path)
 
     # Navigation (user-requested fix, 2026-07-21): previously this was
     # either/or — ANY manual Site Nav item at all silenced the
@@ -919,7 +1045,28 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
     # against is now structurally impossible, not just detected. The
     # check itself was removed rather than left in place doing nothing.
 
-    urls: List[str] = []
+    urls: List[Dict[str, Any]] = []
+
+    # FEATURE #21 (2026-09-12): canonical output-path collision check.
+    # Structurally less likely since Posts moved under /post/ (see the
+    # URL-STRUCTURE FIX note below), but two Pages can still collide if
+    # their slugs match, and a future PageSeo canonical_url override
+    # could introduce one too. Checked inline as each primary path is
+    # decided (not as a separate collect-then-scan pass — this builder
+    # writes files immediately per loop, not in two phases) rather than
+    # for every paginated sub-page (/page/2.html, etc.), which cannot
+    # collide with anything else by construction.
+    seen_urls: Dict[str, str] = {}
+    build_date = management_cms_shared_now_iso()[:10]
+
+    def _check_url_collision(path: str, title: str) -> None:
+        prior = seen_urls.get(path)
+        if prior is not None and prior != title:
+            warnings.append(
+                f"Canonical URL collision: '{path}' is produced by both "
+                f"'{prior}' and '{title}'."
+            )
+        seen_urls[path] = title
 
     # Home page: an explicit page_type=="home" page wins if one exists; if
     # not, auto-generate a recent-posts feed as the homepage (bare-minimum
@@ -931,7 +1078,8 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
     if home_html is not None:
         home_built = True
         (out / "index.html").write_text(home_html, encoding="utf-8")
-        urls.append("/index.html")
+        _check_url_collision("/index.html", "Home")
+        urls.append({"path": "/index.html", "lastmod": build_date, "changefreq": "daily", "priority": "1.0"})
     else:
         # HOMEPAGE HERO FIX (2026-07-28, requested directly — "get to work
         # on whatever is not done"): previously the auto-generated
@@ -967,7 +1115,7 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
                 "title": p.get("title", ""),
                 "url": f'/post/{p.get("slug", "")}.html',
                 "meta": management_cms_shared_fmt_date(p.get("published_at", ""), "%b %d, %Y"),
-                "excerpt": management_cms_shared_excerpt(p.get("content_html", "")),
+                "excerpt": management_cms_shared_excerpt(p.get("content_html", ""), explicit_excerpt=p.get("excerpt", "")),
                 "thumbnail": management_cms_shared_export_thumbnail(p.get("featured_image", ""))[0],  # AUDIT FIX (M-1, media-url rewrite + YouTube thumbnail)
                 "is_video": management_cms_shared_export_thumbnail(p.get("featured_image", ""))[1],
             }
@@ -993,11 +1141,13 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
 
         home_page_urls = _management_cms_write_paginated_feed(
             home_items, "/index", out / "index.html", _build_home_fallback_page,
+            changefreq="daily", priority="1.0", lastmod=build_date,
         )
         # page 1's real URL is "/index.html" already (out/index.html),
         # matching url_fn's "/index.html" for n==1 — no extra rewrite
         # needed. Page 2+ lands at out/index/page/{n}.html -> /index/page/{n}.html.
         home_built = True
+        _check_url_collision("/index.html", "Home")
         urls.extend(home_page_urls)
         warnings.append(
             "No page is marked as Home (Page Type = \"home\") — using an auto-generated "
@@ -1011,10 +1161,15 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
     for page in pages:
         if page.get("page_type") == "home":
             continue
-        html = _management_cms_build_page(page, category_lookup, site_config, root_manifest_path, nav_html)
+        html = _management_cms_build_page(page, category_lookup, site_config, root_manifest_path, nav_html, category_slug_lookup=category_slug_lookup, page_manifest_path=page_manifest_path)
         slug = page.get("slug", "")
         (out / f"{slug}.html").write_text(html, encoding="utf-8")
-        urls.append(f"/{slug}.html")
+        _check_url_collision(f"/{slug}.html", page.get("title") or slug)
+        urls.append({
+            "path": f"/{slug}.html",
+            "lastmod": management_cms_shared_fmt_date(page.get("updated_at", ""), "%Y-%m-%d") or build_date,
+            "changefreq": "weekly", "priority": "0.8",
+        })
         page_count += 1
 
     # Posts
@@ -1036,10 +1191,15 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
     post_dir = out / "post"
     post_dir.mkdir(exist_ok=True)
     for post in posts:
-        html = _management_cms_build_post(post, category_lookup, tag_lookup, site_config, root_manifest_path, nav_html, all_posts=posts)
+        html = _management_cms_build_post(post, category_lookup, tag_lookup, site_config, root_manifest_path, nav_html, all_posts=posts, category_slug_lookup=category_slug_lookup)
         slug = post.get("slug", "")
         (post_dir / f"{slug}.html").write_text(html, encoding="utf-8")
-        urls.append(f"/post/{slug}.html")
+        _check_url_collision(f"/post/{slug}.html", post.get("title") or slug)
+        urls.append({
+            "path": f"/post/{slug}.html",
+            "lastmod": management_cms_shared_fmt_date(post.get("updated_at", ""), "%Y-%m-%d") or build_date,
+            "changefreq": "weekly", "priority": "0.7",
+        })
 
     # Category archive pages (post-type)
     # URL-SYMMETRY FIX (2026-07-22, requested directly): previously written
@@ -1064,7 +1224,10 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
             cat_posts, f"/post-category/{slug}", category_dir / f"{slug}.html",
             lambda items, pag, c=cat: _management_cms_build_category_page(
                 c, items, site_config, root_manifest_path, nav_html, pag),
+            changefreq="monthly", priority="0.5", lastmod=build_date,
         )
+        if page_urls:
+            _check_url_collision(page_urls[0]["path"], cat.get("title") or slug)
         urls.extend(page_urls)
 
     # Category archive pages (page-type) — BUG FIX: these categories can
@@ -1090,7 +1253,10 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
             cat_pages, f"/page-category/{slug}", page_category_dir / f"{slug}.html",
             lambda items, pag, c=cat: _management_cms_build_category_page(
                 c, items, site_config, root_manifest_path, nav_html, pag),
+            changefreq="monthly", priority="0.5", lastmod=build_date,
         )
+        if page_urls:
+            _check_url_collision(page_urls[0]["path"], cat.get("title") or slug)
         urls.extend(page_urls)
 
     # Tag archive pages
@@ -1104,7 +1270,10 @@ def management_cms_static_build(page_manifest_path: str, post_manifest_path: str
             tag_posts, f"/tag/{slug}", tag_dir / f"{slug}.html",
             lambda items, pag, t=tag: _management_cms_build_tag_page(
                 t, items, site_config, root_manifest_path, nav_html, pag),
+            changefreq="monthly", priority="0.5", lastmod=build_date,
         )
+        if page_urls:
+            _check_url_collision(page_urls[0]["path"], tag.get("name") or slug)
         urls.extend(page_urls)
 
     # Feeds

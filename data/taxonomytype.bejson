@@ -1,0 +1,161 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "TaxonomyType"
+  ],
+  "Fields": [
+    {
+      "name": "taxonomy_id",
+      "type": "string"
+    },
+    {
+      "name": "taxonomy",
+      "type": "string"
+    },
+    {
+      "name": "type",
+      "type": "string"
+    },
+    {
+      "name": "category",
+      "type": "string"
+    },
+    {
+      "name": "label",
+      "type": "string"
+    },
+    {
+      "name": "idx_position",
+      "type": "integer"
+    },
+    {
+      "name": "idx_sorting",
+      "type": "string"
+    },
+    {
+      "name": "active",
+      "type": "boolean"
+    },
+    {
+      "name": "hidden",
+      "type": "boolean"
+    },
+    {
+      "name": "mfdb_path",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "0d13ec64-02f6-4f20-96ff-167330fac67d",
+      "note",
+      null,
+      null,
+      "Notes",
+      0,
+      "default",
+      true,
+      false,
+      "Content/Notes/MFDB/104a.mfdb.bejson",
+      "2026-10-03T09:10:52Z"
+    ],
+    [
+      "383c75d4-acf7-485a-9a93-56322296bae6",
+      "task",
+      null,
+      null,
+      "Tasks",
+      0,
+      "default",
+      true,
+      false,
+      "Content/Tasks/MFDB/104a.mfdb.bejson",
+      "2026-10-03T09:10:52Z"
+    ],
+    [
+      "3f7d9ddc-4ad6-46e9-9d87-005a705144ab",
+      "link",
+      null,
+      null,
+      "Links",
+      0,
+      "default",
+      true,
+      false,
+      "Content/Links/MFDB/104a.mfdb.bejson",
+      "2026-10-03T09:10:52Z"
+    ],
+    [
+      "51b882aa-8052-4eac-9806-14dc934423a8",
+      "page",
+      null,
+      null,
+      "Pages",
+      0,
+      "default",
+      true,
+      false,
+      "Content/Pages/MFDB/104a.mfdb.bejson",
+      "2026-10-03T09:10:52Z"
+    ],
+    [
+      "03bfc753-ecb6-480e-a480-ecbc6da1aae1",
+      "cms_category",
+      "management_cms",
+      "public_hosting",
+      "Category",
+      0,
+      "default",
+      true,
+      false,
+      "Content/Category/MFDB/104a.mfdb.bejson",
+      "2026-10-03T09:10:52Z"
+    ],
+    [
+      "e8e95dbd-a8f1-4f05-ad64-cfcf839bac31",
+      "cms_page",
+      "management_cms",
+      "public_hosting",
+      "Page",
+      0,
+      "default",
+      true,
+      false,
+      "Content/Page/MFDB/104a.mfdb.bejson",
+      "2026-10-03T09:10:53Z"
+    ],
+    [
+      "9328e490-274e-49ac-bfa2-4dc970f6677b",
+      "cms_post",
+      "management_cms",
+      "public_hosting",
+      "Post",
+      0,
+      "default",
+      true,
+      false,
+      "Content/Post/MFDB/104a.mfdb.bejson",
+      "2026-10-03T09:10:53Z"
+    ],
+    [
+      "ecc668fc-07af-4983-81f9-cf5e5a8114ad",
+      "cms_media",
+      "management_cms",
+      "public_hosting",
+      "Media",
+      0,
+      "default",
+      true,
+      false,
+      "Content/media/MFDB/104a.mfdb.bejson",
+      "2026-10-03T09:10:53Z"
+    ]
+  ]
+}

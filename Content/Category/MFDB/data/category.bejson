@@ -36,24 +36,5 @@
       "type": "string"
     }
   ],
-  "Values": [
-    [
-      "ed9eb599-279c-452a-bb93-cf07b46499a9",
-      null,
-      "post",
-      "Developer Post Category",
-      "This is a test post category",
-      "Developer-Post-Category",
-      "2026-07-31T11:20:16Z"
-    ],
-    [
-      "70f6a23b-a03b-4f60-986c-b27d8d4c2a05",
-      null,
-      "page",
-      "Developer-Page-Category",
-      "This is a page test category by the developer",
-      "Developer-Page-Category",
-      "2026-07-31T11:21:34Z"
-    ]
-  ]
+  "Values": []
 }

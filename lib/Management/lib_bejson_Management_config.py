@@ -57,7 +57,7 @@ MANAGEMENT_CONFIG_DEFAULT_VALUES = {
         # AUDIT FIX (M-5): "debug" removed here, 2026-08-14 — verified
         # zero consumers anywhere in app.py, lib/Management/*.py, or
         # templates/index.html (grepped, not assumed) before removing.
-        # See docs/dead_code.md.
+        # See dev/dead_code.md.
     ]
 }
 

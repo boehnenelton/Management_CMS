@@ -60,21 +60,5 @@
       "type": "string"
     }
   ],
-  "Values": [
-    [
-      "link",
-      null,
-      "e2e4264e-4190-4ab3-b659-8d736fa81a7c",
-      "d02b5ded-861a-478b-b7d2-84f33728ae0c",
-      "github",
-      0,
-      "default",
-      true,
-      false,
-      "2026-07-31T11:59:59Z",
-      "github.com/boehnenelton",
-      "\ud83d\udcf1",
-      "My Github"
-    ]
-  ]
+  "Values": []
 }

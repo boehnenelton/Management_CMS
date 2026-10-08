@@ -8,7 +8,7 @@
   "DB_Description": "Templated MFDB for taxonomy: Notes",
   "Schema_Version": "1.0.0",
   "Author": "Elton Boehnen",
-  "Created_At": "2026-07-31T11:17:43Z",
+  "Created_At": "2026-10-03T09:10:52Z",
   "Records_Type": [
     "mfdb"
   ],
@@ -43,7 +43,7 @@
       "Note",
       "data/note.bejson",
       null,
-      7,
+      5,
       "1.0",
       null
     ],
@@ -51,7 +51,7 @@
       "NoteCategory",
       "data/notecategory.bejson",
       null,
-      2,
+      1,
       "1.0",
       "cat_id"
     ]

@@ -22,37 +22,37 @@
   "Values": [
     [
       "site_title",
-      "Management CMS",
+      "boehnenelton2024",
       "Title on exported homepage"
     ],
     [
       "site_subtitle",
-      "Developer Page",
+      "Powered by BEJSON",
       "Subtitle / tagline"
     ],
     [
       "footer_text",
-      "",
-      "Extra footer text (e.g. \"All rights reserved.\") — appears after the auto copyright line"
+      "Management CMS",
+      "Extra footer text (e.g. \"All rights reserved.\") \u2014 appears after the auto copyright line"
     ],
     [
       "show_clock",
-      "false",
+      "true",
       "Show live clock on exported page"
     ],
     [
       "show_greeting",
-      "false",
+      "true",
       "Show time-based greeting"
     ],
     [
       "accent_color",
-      "#DE2626",
+      "#ff0000",
       "Accent colour"
     ],
     [
       "bg_color",
-      "#0a0a0a",
+      "#000000",
       "Background colour"
     ],
     [

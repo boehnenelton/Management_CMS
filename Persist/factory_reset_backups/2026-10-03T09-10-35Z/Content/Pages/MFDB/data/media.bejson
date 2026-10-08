@@ -1,0 +1,95 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "Media"
+  ],
+  "Fields": [
+    {
+      "name": "media_id",
+      "type": "string"
+    },
+    {
+      "name": "filename",
+      "type": "string"
+    },
+    {
+      "name": "original_path",
+      "type": "string"
+    },
+    {
+      "name": "file_type",
+      "type": "string"
+    },
+    {
+      "name": "mime_type",
+      "type": "string"
+    },
+    {
+      "name": "file_size_bytes",
+      "type": "integer"
+    },
+    {
+      "name": "width",
+      "type": "integer"
+    },
+    {
+      "name": "height",
+      "type": "integer"
+    },
+    {
+      "name": "file_hash",
+      "type": "string"
+    },
+    {
+      "name": "webp_path",
+      "type": "string"
+    },
+    {
+      "name": "alt_text",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    },
+    {
+      "name": "external_url",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "406ec330-07e3-46b6-9607-8270088baf5a",
+      "1000744483.png",
+      "Content/media/uploads/1000744483.png",
+      "image",
+      "image/png",
+      599610,
+      null,
+      null,
+      "f8ced8a4bd63db8521681664eeeb7d64673865701a25fb7e4f0926c3ba4aa86d",
+      "",
+      "",
+      "2026-07-31T11:26:20Z",
+      ""
+    ],
+    [
+      "adbf9689-e4e2-494b-9a9c-33f43f36092c",
+      "1000754777.webp",
+      "Content/media/uploads/1000754777.webp",
+      "image",
+      "image/webp",
+      87198,
+      null,
+      null,
+      "8a57455ba2acf9207c58b1124b5a710ad13c8fa172ca171760525cd5c996a5d8",
+      "",
+      "",
+      "2026-07-31T11:49:46Z",
+      ""
+    ]
+  ]
+}

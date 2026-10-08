@@ -1,0 +1,159 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "Note"
+  ],
+  "Fields": [
+    {
+      "name": "taxonomy",
+      "type": "string"
+    },
+    {
+      "name": "type",
+      "type": "string"
+    },
+    {
+      "name": "category",
+      "type": "string"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "label",
+      "type": "string"
+    },
+    {
+      "name": "idx_position",
+      "type": "integer"
+    },
+    {
+      "name": "idx_sorting",
+      "type": "string"
+    },
+    {
+      "name": "active",
+      "type": "boolean"
+    },
+    {
+      "name": "hidden",
+      "type": "boolean"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    },
+    {
+      "name": "content",
+      "type": "string"
+    },
+    {
+      "name": "color",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "note",
+      null,
+      "afad457f-6420-4449-9277-9709cb2eba6d",
+      "06ef9671-51cc-43b7-85df-dea828985001",
+      "Sidebar Issues",
+      0,
+      "default",
+      true,
+      false,
+      "2026-07-31T11:28:33Z",
+      "Page category shows up on the side bar as a page and the pages themselves show up above both the post and the pages section at the top of the side part with no header.\n\nThis would look fine if there was a header on the side bar at the top but it's currently just blank and it's a weird looking empty space. You should at least put something like Navigation, or ManagementCMS using #DE2626 on sidebar header space.",
+      "#fce7f3"
+    ],
+    [
+      "note",
+      null,
+      "de6c63bc-2e2b-497f-9757-c4ca4f5552a7",
+      "c24841b1-1bc9-441d-af02-3341d0c1782b",
+      "Style Settings",
+      0,
+      "default",
+      true,
+      false,
+      "2026-07-31T11:40:25Z",
+      "PRIORITY: LOW\n\nIn the settings I can change the background of the exported sites background and accent.\n\nThe way I see it is that it's either all or nothing. You got three.\n\n1. Remove these setting altogether... Which which is my least preferred option.\n\n2. Go all out crete a sub tab switcher at the top of the Admin Dashboard settings, add style tab and allow me to customize page fonts and backgrounds, cards, card backgrounds, card fonts, links, link active, link hover, sidebar background, sidebar fonts, list fonts, header fonts etc.... with a save theme option in a combo boxes which custom teams. \n\n3. Go all out crete a sub tab switcher at the top of the Admin Dashboard settings, Add a style sheet switcher, to create style sheet option which would call it from a template and register it in a combo box to the select and allow you to build custom style sheets.\n\nPersonally I prefer option two. But allowing me to change two colors is just stupid.",
+      "#fce7f3"
+    ],
+    [
+      "note",
+      null,
+      "de6c63bc-2e2b-497f-9757-c4ca4f5552a7",
+      "2255c9ae-e419-42f8-a03e-ecd9b9899ef1",
+      "Settings",
+      0,
+      "default",
+      true,
+      false,
+      "2026-07-31T11:42:56Z",
+      "In the settings, Add a subtab switcher at the top kind of similar to how the notes switches categories. \n\nAdd a style section, move color and theme settings there. Expand theme options allow saving custom themes.",
+      "#fce7f3"
+    ],
+    [
+      "note",
+      null,
+      "de6c63bc-2e2b-497f-9757-c4ca4f5552a7",
+      "d6bfe760-bcb1-44db-bf4e-559f5c543241",
+      "Grouped Backend",
+      0,
+      "default",
+      true,
+      false,
+      "2026-07-31T11:45:17Z",
+      "On the admin dashboard sidebar, group settings, links, notes to do list and tasks under a management group, categorize the page editing sections and post editing as Publishing. Navigation and Categories can go under Management as well or in their own Site Configuration group. Separate the admin dashboard sidebar into sections based on groups.\n\nIs groups only really matter when it comes to the sidebar of the admin dashboard.",
+      "#fce7f3"
+    ],
+    [
+      "note",
+      null,
+      "de6c63bc-2e2b-497f-9757-c4ca4f5552a7",
+      "455303ce-82c4-469e-8b5b-96263f9562ab",
+      "Show Clock and Greeting",
+      0,
+      "default",
+      true,
+      false,
+      "2026-07-31T11:54:33Z",
+      "Does this even do anything anymore? If not why is it still there? If so explain. \n\nSettings needs subtab switcher regardless and you need to categorize the settings cuz as of now everything's extremely limited or unorganized and not prepared for the future as far as the setting section goes to the admin dashboard.",
+      "#fce7f3"
+    ],
+    [
+      "note",
+      null,
+      "de6c63bc-2e2b-497f-9757-c4ca4f5552a7",
+      "5b2aab06-fa41-47a8-9f95-3a3711bab7ef",
+      "Theme",
+      0,
+      "default",
+      true,
+      false,
+      "2026-07-31T11:56:52Z",
+      "The admin dashboard theme the white red and black is okay for a light theme the design of the site is excellent the theme I think you should change to a default and dark theme using a black background using white buttons, tabs in put boxes and combos, black font with red active and selection bg for elements and white font .. leave the option to persistently switch back to the light theme in the settings if you want...\nDo not change anything but the colors leave everything else the f*** alone my specified otherwise.",
+      "#fce7f3"
+    ],
+    [
+      "note",
+      null,
+      "de6c63bc-2e2b-497f-9757-c4ca4f5552a7",
+      "31962f65-855d-4cc6-b146-4e8c24da14c2",
+      "Download function",
+      0,
+      "default",
+      true,
+      false,
+      "2026-07-31T12:02:10Z",
+      "In the build section the download button only downloads the index page it should be allowing you to download the zip file everything. Needs to be fixed.",
+      "#fce7f3"
+    ]
+  ]
+}

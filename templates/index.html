@@ -43,6 +43,9 @@ body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-mai
 .becss-sidebar{width:var(--sidebar-width);flex-shrink:0;border-right:1px solid var(--border);
   display:flex;flex-direction:column;background:var(--bg-page);overflow-y:auto}
 .becss-sidebar__nav{padding:.6rem .4rem;display:flex;flex-direction:column;gap:.1rem}
+.becss-nav-section-label{font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--text-muted);padding:.7rem .7rem .3rem}
+.becss-nav-section-label:first-child{padding-top:.2rem}
 .becss-nav-item{display:flex;align-items:center;gap:.55rem;padding:.5rem .7rem;
   border-radius:var(--radius);border:none;background:none;cursor:pointer;
   font-family:var(--font-sans);font-size:.82rem;font-weight:500;color:var(--text-main);
@@ -194,20 +197,40 @@ body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-mai
 .becss-settings-list__input[type=checkbox]{min-width:auto;width:15px;height:15px;cursor:pointer;accent-color:var(--primary)}
 .becss-settings-list__input[type=color]{padding:.1rem .2rem;width:46px;height:26px;cursor:pointer;min-width:auto}
 
-/* MODAL */
-.becss-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;
-  display:none;align-items:center;justify-content:center;padding:1rem}
+/* MODAL — full-screen overlay, header/scroll-body/sticky-footer layout.
+   #modalOv is the single shared shell every entity type's editor uses
+   (openModal()/closeModal()/handleSave() dispatch by editTarget.type),
+   so this one restructure fixes scrolling and the unreachable Save
+   button everywhere at once — links, notes, todos, pages, posts,
+   categories, nav items alike — not just the page/post editors. */
+.becss-modal-overlay{position:fixed;inset:0;background:var(--bg-page);z-index:200;
+  display:none;flex-direction:column}
 .becss-modal-overlay--open{display:flex}
-.becss-modal{background:var(--bg-page);border:1px solid var(--border);border-radius:9px;
-  padding:1.35rem;width:100%;max-width:440px;box-shadow:0 8px 30px rgba(0,0,0,.1)}
-.becss-modal__title{font-size:.9rem;font-weight:700;margin-bottom:.9rem}
+.becss-modal{background:var(--bg-page);width:100%;height:100%;max-width:none;
+  display:flex;flex-direction:column;padding:0;border:none;border-radius:0;box-shadow:none;overflow:hidden}
+.becss-modal__header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+  padding:.9rem 1.1rem;border-bottom:1px solid var(--border);flex:0 0 auto}
+.becss-modal__title{font-size:.9rem;font-weight:700;margin:0}
+.becss-modal__close{background:none;border:none;font-size:1.4rem;line-height:1;cursor:pointer;
+  color:var(--text-muted);padding:.15rem .4rem;border-radius:var(--radius)}
+.becss-modal__close:hover{color:var(--text-main);background:var(--bg-alt)}
+.becss-modal__body{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:1.1rem;width:100%;max-width:640px;margin:0 auto}
 .becss-form__group{display:flex;flex-direction:column;gap:.25rem;margin-bottom:.65rem}
 .becss-form__label{font-size:.74rem;font-weight:600;color:var(--text-muted)}
 .becss-form__input,.becss-form__select,.becss-form__textarea{padding:.4rem .6rem;border:1px solid var(--border);
   border-radius:var(--radius);font-family:var(--font-sans);font-size:.82rem;
   background:#fff;color:#000;width:100%}
 .becss-form__textarea{resize:vertical;min-height:80px;font-family:var(--font-mono);font-size:.77rem}
-.becss-modal__actions{display:flex;justify-content:flex-end;gap:.4rem;margin-top:.4rem}
+.becss-form__textarea--content{min-height:50vh}
+.becss-form-tabs{display:flex;gap:.2rem;border-bottom:1px solid var(--border);margin-bottom:.9rem;
+  position:sticky;top:-1.1rem;background:var(--bg-page);z-index:1;padding-top:.1rem}
+.becss-form-tab{padding:.5rem .9rem;border:none;background:none;cursor:pointer;
+  font-family:var(--font-sans);font-size:.82rem;font-weight:600;color:var(--text-muted);
+  border-bottom:2px solid transparent;margin-bottom:-1px}
+.becss-form-tab--active{color:var(--primary);border-bottom-color:var(--primary)}
+.becss-modal__actions{display:flex;justify-content:flex-end;gap:.4rem;
+  padding:.75rem 1.1rem;border-top:1px solid var(--border);flex:0 0 auto}
 .becss-btn{padding:.35rem .85rem;border-radius:var(--radius);border:1px solid var(--border);
   font-family:var(--font-sans);font-size:.8rem;font-weight:500;cursor:pointer;
   background:var(--bg-page);color:var(--text-main);transition:background .1s}
@@ -288,7 +311,7 @@ body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-mai
   display:none;align-items:center;justify-content:center;padding:1rem}
 .becss-catmgr-overlay--open{display:flex}
 .becss-catmgr{background:var(--bg-page);border:1px solid var(--border);border-radius:9px;
-  padding:1.2rem;width:100%;max-width:360px;box-shadow:0 8px 30px rgba(0,0,0,.1)}
+  padding:1.2rem;width:100%;max-width:360px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.1)}
 .becss-catmgr__title{font-size:.88rem;font-weight:700;margin-bottom:.8rem;
   display:flex;justify-content:space-between;align-items:center}
 .becss-catmgr__close-btn{background:none;border:none;cursor:pointer;font-size:1rem;
@@ -333,8 +356,11 @@ body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-mai
 <!-- Standard modal -->
 <div id="modalOv" class="becss-modal-overlay">
   <div class="becss-modal">
-    <div class="becss-modal__title" id="modalTitle"></div>
-    <div id="modalBody"></div>
+    <div class="becss-modal__header">
+      <div class="becss-modal__title" id="modalTitle"></div>
+      <button type="button" class="becss-modal__close" onclick="closeModal()" title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="becss-modal__body"><div id="modalBody"></div></div>
     <div class="becss-modal__actions">
       <button class="becss-btn" onclick="closeModal()">Cancel</button>
       <button class="becss-btn becss-btn--primary" id="modalSaveBtn" onclick="handleSave()">Save</button>
@@ -419,26 +445,29 @@ body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-mai
 <div class="becss-shell">
   <nav class="becss-sidebar" id="sidebar">
     <div class="becss-sidebar__nav">
-      <button class="becss-nav-item becss-nav-item--active" onclick="go('links',this)"><span class="becss-nav-item__icon">🔗</span>Links</button>
-      <button class="becss-nav-item" onclick="go('notes',this)"><span class="becss-nav-item__icon">📝</span>Notes</button>
-      <button class="becss-nav-item" onclick="go('todos',this)"><span class="becss-nav-item__icon">✅</span>To-Do</button>
-      <button class="becss-nav-item" onclick="go('pages',this)"><span class="becss-nav-item__icon">📄</span>Pages</button>
+      <div class="becss-nav-section-label">CMS</div>
+      <button class="becss-nav-item becss-nav-item--active" onclick="go('pages',this)"><span class="becss-nav-item__icon">📄</span>Pages</button>
       <button class="becss-nav-item" onclick="go('posts',this)"><span class="becss-nav-item__icon">📰</span>Posts</button>
       <button class="becss-nav-item" onclick="go('categories',this)"><span class="becss-nav-item__icon">🗃</span>Categories</button>
       <button class="becss-nav-item" onclick="go('navmenu',this)"><span class="becss-nav-item__icon">🧭</span>Site Nav</button>
       <button class="becss-nav-item" onclick="go('build',this)"><span class="becss-nav-item__icon">🏗</span>Build</button>
       <button class="becss-nav-item" onclick="go('settings',this)"><span class="becss-nav-item__icon">⚙️</span>Settings</button>
+      <div class="becss-nav-section-label">Userspace</div>
+      <button class="becss-nav-item" onclick="go('links',this)"><span class="becss-nav-item__icon">🔗</span>Links</button>
+      <button class="becss-nav-item" onclick="go('notes',this)"><span class="becss-nav-item__icon">📝</span>Notes</button>
+      <button class="becss-nav-item" onclick="go('todos',this)"><span class="becss-nav-item__icon">✅</span>To-Do</button>
     </div>
     <div class="becss-sidebar__footer">Elton Boehnen<br>eltonboehnen@gmail.com<br>boehnenelton2024.pages.dev</div>
   </nav>
 
   <main class="becss-main">
     <nav class="becss-toolbar" id="toolbar"></nav>
+    <input type="file" id="importFileInput" accept=".md,.html" style="display:none" onchange="_doImport()">
     <div class="becss-content">
-      <div class="becss-panel becss-panel--active" id="panel-links"><div id="linksOut"></div></div>
-      <div class="becss-panel"        id="panel-notes"><div id="notesOut"></div></div>
-      <div class="becss-panel"        id="panel-todos"><div id="todosOut"></div></div>
-      <div class="becss-panel"        id="panel-pages"><div id="pagesOut"></div></div>
+      <div class="becss-panel" id="panel-links"><div id="linksOut"></div></div>
+      <div class="becss-panel" id="panel-notes"><div id="notesOut"></div></div>
+      <div class="becss-panel" id="panel-todos"><div id="todosOut"></div></div>
+      <div class="becss-panel becss-panel--active" id="panel-pages"><div id="pagesOut"></div></div>
       <div class="becss-panel"        id="panel-posts"><div id="postsOut"></div></div>
       <div class="becss-panel"        id="panel-categories"><div id="categoriesOut"></div></div>
       <div class="becss-panel"        id="panel-navmenu"><div id="navmenuOut"></div></div>
@@ -456,7 +485,90 @@ body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-mai
 // sessionStorage now (cleared when the tab closes), populated by the
 // login prompt below after a round-trip through /api/auth/check.
 var ADMIN_TOKEN = sessionStorage.getItem("mgmt_cms_admin_token") || "";
-var P = "links", editTarget = null, _cfgRaw = [];
+var P = "pages", editTarget = null, _cfgRaw = [];
+var _autosaveTimer = null;
+
+/* FEATURE #4 (2026-09-12): client-side draft autosave for the Page/Post
+   editors. Pure frontend — no backend route, no schema change. Generic
+   over any input/textarea/select whose id starts with the given prefix
+   ("pf_" for pages, "pof_" for posts), so a future field added to
+   either form is picked up automatically without touching this code. */
+function _autosaveCollect(prefix){
+  var data={};
+  document.querySelectorAll('#modalBody [id^="'+prefix+'"]').forEach(function(el){
+    if(el.tagName==="INPUT"||el.tagName==="TEXTAREA"||el.tagName==="SELECT") data[el.id]=el.value;
+  });
+  return data;
+}
+function _autosaveStart(prefix,key){
+  if(_autosaveTimer) clearInterval(_autosaveTimer);
+  _autosaveTimer=setInterval(function(){
+    try{ localStorage.setItem(key, JSON.stringify(_autosaveCollect(prefix))); }catch(e){}
+  },15000);
+}
+function _autosaveRestore(prefix,key){
+  var raw; try{ raw=localStorage.getItem(key); }catch(e){ raw=null; }
+  if(!raw) return;
+  try{
+    var data=JSON.parse(raw);
+    Object.keys(data).forEach(function(id){ var el=document.getElementById(id); if(el) el.value=data[id]; });
+    toast("Unsaved draft found — restored.");
+  }catch(e){}
+}
+
+/* FEATURE #13 (2026-09-12): internal linking assistant. Pure frontend —
+   filters the already-in-memory _allPages/_allPosts (loaded by
+   loadPages()/loadPosts()) by title match, no new backend routes.
+   Shared between pageForm() (prefix "pf_") and postForm() (prefix
+   "pof_") the same way the autosave helpers above are. */
+function _linkAssistantPanel(prefix){
+  return '<div class="becss-form__group">'
+    +'<label class="becss-form__label">Insert Link</label>'
+    +'<input class="becss-form__input" id="'+prefix+'linksearch" placeholder="Search pages/posts by title…" oninput="_linkAssistantSearch(\''+prefix+'\')" autocomplete="off">'
+    +'<div id="'+prefix+'linkresults" style="display:none;margin-top:.3rem;max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:var(--radius)"></div>'
+    +'</div>';
+}
+var _linkAssistantDebounce=null;
+async function _linkAssistantSearch(prefix){
+  clearTimeout(_linkAssistantDebounce);
+  _linkAssistantDebounce=setTimeout(async function(){
+    // Preload whichever list hasn't been loaded yet this session — the
+    // editor may have been opened straight from a tab that never
+    // triggered the other content type's own loadPages()/loadPosts().
+    if(!_allPages.length) await loadPages();
+    if(!_allPosts.length) await loadPosts();
+    var q=(document.getElementById(prefix+"linksearch").value||"").trim().toLowerCase();
+    var box=document.getElementById(prefix+"linkresults");
+    if(!q){ box.style.display="none"; box.innerHTML=""; return; }
+    var matches=[];
+    _allPages.forEach(function(p){
+      if((p.title||p.slug||"").toLowerCase().indexOf(q)>=0) matches.push({title:p.title||p.slug,url:"/"+p.slug+".html"});
+    });
+    _allPosts.forEach(function(p){
+      if((p.title||"").toLowerCase().indexOf(q)>=0) matches.push({title:p.title,url:"/post/"+p.slug+".html"});
+    });
+    matches=matches.slice(0,8);
+    box.style.display="block";
+    if(!matches.length){ box.innerHTML='<div style="padding:.5rem;color:var(--text-muted);font-size:.85rem">No matches</div>'; return; }
+    box.innerHTML=matches.map(function(m){
+      return '<div class="becss-link-result" data-url="'+esc(m.url)+'" data-title="'+esc(m.title)+'" style="padding:.5rem;cursor:pointer;border-bottom:1px solid var(--border)">'
+        +esc(m.title)+' <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:.75rem">'+esc(m.url)+'</span></div>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll(".becss-link-result"),function(el){
+      el.onclick=function(){ _linkAssistantInsert(prefix, el.getAttribute("data-url"), el.getAttribute("data-title")); };
+    });
+  },300);
+}
+function _linkAssistantInsert(prefix,url,title){
+  var ta=document.getElementById(prefix+"content");
+  if(!ta) return;
+  var start=ta.selectionStart||0, end=ta.selectionEnd||0;
+  var link='<a href="'+url+'">'+title+'</a>';
+  ta.value=ta.value.slice(0,start)+link+ta.value.slice(end);
+  ta.focus(); ta.selectionStart=ta.selectionEnd=start+link.length;
+  document.getElementById(prefix+"linkresults").style.display="none";
+  document.getElementById(prefix+"linksearch").value="";
+}
 var _noteFilter = "__all__";   // active notes category filter
 var _noteCats   = [];          // [{cat_id, cat_name}] — refreshed with loadNotes
 var _linkFilter = "__all__";
@@ -504,7 +616,7 @@ function _showLoginGate(message){
       ADMIN_TOKEN = val;
       sessionStorage.setItem("mgmt_cms_admin_token", val);
       ov.style.display = "none";
-      renderToolbar("links"); loadLinks();
+      renderToolbar("pages"); loadPages();
     } else {
       document.getElementById("authGateMsg").textContent = "Invalid token — try again.";
       document.getElementById("authGateMsg").style.color = "#ff6b6b";
@@ -612,8 +724,10 @@ function renderToolbar(panel) {
               +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadBuild()">↻</button>',
     settings: '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="saveSettings()">💾 Save</button>',
     pages:    '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddPage()">＋ Page</button>'
+              +'<button class="becss-toolbar__btn" onclick="triggerImport(\'pages\')">⇪ Import</button>'
               +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadPages()">↻</button>',
     posts:    '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddPost()">＋ Post</button>'
+              +'<button class="becss-toolbar__btn" onclick="triggerImport(\'posts\')">⇪ Import</button>'
               +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadPosts()">↻</button>',
     categories: '<button class="becss-toolbar__btn becss-toolbar__btn--primary" onclick="openAddCategory()">＋ Category</button>'
               +'<div class="becss-toolbar__separator"></div><button class="becss-toolbar__btn" onclick="loadCategories()">↻</button>',
@@ -1072,7 +1186,16 @@ async function loadSettings(){
   var el=document.getElementById("settingsOut");
   var d=await api("GET","/api/config");
   _cfgRaw=d.settings||[];
-  el.innerHTML='<div class="becss-section-header">Site Settings</div><div class="becss-settings-list">'
+  var about=await api("GET","/api/about");
+  var notes=await api("GET","/api/debug-notes");
+  el.innerHTML='<div class="becss-section-header">About</div>'
+    +'<div class="becss-settings-list" style="padding:.75rem 1rem">'
+    +'<div style="font-weight:700">'+esc(about.name||"")+' <span style="font-family:var(--font-mono);font-weight:400;color:var(--text-muted)">v'+esc(about.version||"")+' (PKG'+esc(about.package_version||"")+')</span></div>'
+    +'<div class="becss-settings-list__desc" style="margin:.35rem 0">'+esc(about.description||"")+'</div>'
+    +'<div class="becss-settings-list__desc">Last updated '+esc(about.date||"")+'</div>'
+    +'<div class="becss-settings-list__desc" style="margin-top:.5rem">'+esc(about.author||"")+' · '+esc(about.author_email||"")+' · '+esc(about.author_site||"")+' · '+esc(about.author_github||"")+'</div>'
+    +'</div>'
+    +'<div class="becss-section-header">Site Settings</div><div class="becss-settings-list">'
     +_cfgRaw.map(function(s){
       // AUDIT FIX (M-5): show_clock/show_greeting/accent_color/bg_color
       // have real, working code behind them — but only in
@@ -1103,7 +1226,25 @@ async function loadSettings(){
     +'Tasks, Links, and Settings back to a clean default install. Everything is backed up first, '
     +'nothing is permanently destroyed — but this cannot be undone from the UI.</div></div>'
     +'<button class="becss-btn" style="border-color:#DE2626;color:#DE2626" onclick="openFactoryResetConfirm()">⚠ Factory Reset…</button>'
-    +'</div></div>';
+    +'</div></div>'
+    +'<div class="becss-section-header" style="margin-top:1.5rem">Debug Notes</div>'
+    +'<div class="becss-settings-list" style="padding:.75rem 1rem">'
+    +'<textarea class="becss-form__textarea" id="debugNotesBox" style="min-height:160px" oninput="_debugNotesQueueSave()">'+esc(notes.content||"")+'</textarea>'
+    +'<div class="becss-settings-list__desc" id="debugNotesStatus" style="margin-top:.35rem">Auto-saves to dev/persistent-notes.md</div>'
+    +'</div>';
+}
+var _debugNotesTimer=null;
+function _debugNotesQueueSave(){
+  clearTimeout(_debugNotesTimer);
+  var statusEl=document.getElementById("debugNotesStatus");
+  if(statusEl) statusEl.textContent="Saving…";
+  _debugNotesTimer=setTimeout(async function(){
+    var box=document.getElementById("debugNotesBox");
+    if(!box) return;
+    await api("PUT","/api/debug-notes",{content:box.value});
+    var el=document.getElementById("debugNotesStatus");
+    if(el) el.textContent="Saved to dev/persistent-notes.md at "+new Date().toLocaleTimeString();
+  },1200);
 }
 function settingInput(s){
   var id="cfg_"+s.setting_name,v=s.setting_value;
@@ -1136,9 +1277,52 @@ function openModal(title, body){
   setTimeout(function(){ var f=document.querySelector("#modalBody .becss-form__input"); if(f) f.focus(); },55);
 }
 function closeModal(){
+  // FEATURE #5 (2026-09-12): release the soft edit-lock on close — the
+  // opposite rule from the autosave draft above, and deliberately so:
+  // a lock means "someone has this open right now", which stops being
+  // true the moment the editor closes, accidentally or not. The draft
+  // itself is untouched (still recoverable next time this record is
+  // opened) — only the lock claim is released. Scoped to page/post
+  // edits only; every other entity type's editTarget shape just no-ops
+  // the kind lookup below into never firing.
+  var lockTarget = (editTarget && (editTarget.type==="page"||editTarget.type==="post")) ? editTarget : null;
   document.getElementById("modalOv").classList.remove("becss-modal-overlay--open"); editTarget=null;
+  if(_autosaveTimer){ clearInterval(_autosaveTimer); _autosaveTimer=null; }
+  if(lockTarget){
+    var kind=lockTarget.type==="page"?"pages":"posts";
+    api("PUT","/api/"+kind+"/"+lockTarget.id,{locked_at:"",locked_by:""}).catch(function(){});
+  }
 }
-document.getElementById("modalOv").addEventListener("click",function(e){ if(e.target===this) closeModal(); });
+
+/* FEATURE #5 (2026-09-12): soft, advisory-only edit lock for Page/Post.
+   Single-token solo-admin tool (see PAGE_FIELDS' own comment in
+   lib_bejson_Management_content.py) — there's no per-user identity to
+   lock against, so locked_by holds a random id generated once per
+   browser TAB (not per user), which is the only distinction a
+   single-shared-token tool can actually draw: "another tab has this
+   open" vs "you have it open here". Never blocks a save either way. */
+function _lockSessionId(){
+  var id=sessionStorage.getItem("mgmt_cms_tab_id");
+  if(!id){ id="tab-"+Math.random().toString(36).slice(2)+Date.now().toString(36); sessionStorage.setItem("mgmt_cms_tab_id",id); }
+  return id;
+}
+async function _lockAcquire(kind,id,record){
+  var STALE_MS=30*60*1000;
+  var mine=_lockSessionId();
+  if(record.locked_at && record.locked_by && record.locked_by!==mine){
+    var age=Date.now()-Date.parse(record.locked_at);
+    if(!isNaN(age) && age<STALE_MS){
+      toast("This record was opened by another session at "+record.locked_at+".","err");
+    }
+  }
+  try{ await api("PUT","/api/"+kind+"/"+id,{locked_at:new Date().toISOString(),locked_by:mine}); }catch(e){}
+}
+// REMEDIATION (2026-09-21): the click-outside-to-close listener that
+// used to live here was removed as dead code. Since PKG122 made
+// #modalOv full-screen (.becss-modal fills the entire overlay), there
+// is no longer any exposed area of the overlay itself to click — the
+// listener's `e.target===this` check could never fire. Escape and the
+// header close-✕/footer Cancel buttons remain as the ways to close.
 function handleSave(){
   var t=editTarget?editTarget.type:P;
   if(t==="link"||P==="links") saveLinkModal();
@@ -1174,6 +1358,7 @@ async function loadPages(){
       return '<div class="becss-link-card">'
         +'<div class="becss-card__actions">'
         +'<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="editPage(\''+p.id+'\')" title="Edit">✎</button>'
+        +'<button class="becss-card__action-btn" onclick="duplicatePage(\''+p.id+'\')" title="Duplicate">⧉</button>'
         +'<button class="becss-card__action-btn becss-card__action-btn--delete" onclick="delPage(\''+p.id+'\')" title="Del">✕</button>'
         +'</div>'+badge
         +'<div class="becss-link-card__head"><span class="becss-link-card__title">'+esc(p.title||p.slug)+catBadge+'</span></div>'
@@ -1181,6 +1366,37 @@ async function loadPages(){
         +(p.meta_description?'<div class="becss-link-card__desc">'+esc(p.meta_description)+'</div>':'')
         +'</div>';
     }).join('')+'</div>';
+}
+function _pageSeoPanel(){
+  return '<details class="becss-form__group" id="pf_seo_panel">'
+    +'<summary style="cursor:pointer;color:var(--text-muted);font-family:var(--font-mono);font-size:.85rem;margin-bottom:.5rem">SEO (advanced)</summary>'
+    +fg("Meta Title (overrides the search-result description)",'<input class="becss-form__input" id="pf_seo_meta_title" placeholder="Leave blank to use the page\'s own meta description">')
+    +fg("Meta Keywords",'<input class="becss-form__input" id="pf_seo_meta_keywords" placeholder="comma, separated, keywords">')
+    +fg("OG Title",'<input class="becss-form__input" id="pf_seo_og_title" placeholder="Leave blank to use the page title">')
+    +fg("OG Description",'<input class="becss-form__input" id="pf_seo_og_description">')
+    +fg("OG Image URL",'<input class="becss-form__input" id="pf_seo_og_image" placeholder="/media-files/…">')
+    +fg("Canonical URL",'<input class="becss-form__input" id="pf_seo_canonical_url" placeholder="Leave blank to use the default /{slug}.html">')
+    +fg("Robots Directive",'<input class="becss-form__input" id="pf_seo_robots" placeholder="e.g. noindex,nofollow — leave blank for default">')
+    +'</details>';
+}
+async function _pageSeoLoad(pid){
+  var d=await api("GET","/api/pages/"+pid+"/seo");
+  if(d.error) return;
+  ["meta_title","meta_keywords","og_title","og_description","og_image","canonical_url"].forEach(function(k){
+    var el=document.getElementById("pf_seo_"+k); if(el) el.value=d[k]||"";
+  });
+  var robotsEl=document.getElementById("pf_seo_robots"); if(robotsEl) robotsEl.value=d.robots_directive||"";
+}
+function _pageSeoCollect(){
+  return {
+    meta_title:(document.getElementById("pf_seo_meta_title").value||"").trim(),
+    meta_keywords:(document.getElementById("pf_seo_meta_keywords").value||"").trim(),
+    og_title:(document.getElementById("pf_seo_og_title").value||"").trim(),
+    og_description:(document.getElementById("pf_seo_og_description").value||"").trim(),
+    og_image:(document.getElementById("pf_seo_og_image").value||"").trim(),
+    canonical_url:(document.getElementById("pf_seo_canonical_url").value||"").trim(),
+    robots_directive:(document.getElementById("pf_seo_robots").value||"").trim(),
+  };
 }
 function pageForm(p){
   p=p||{};
@@ -1194,40 +1410,65 @@ function pageForm(p){
   var statusOptions=PAGE_STATUS_OPTIONS.map(function(s){
     return '<option value="'+s+'"'+(p.status===s?" selected":"")+'>'+esc(s)+'</option>';
   }).join('');
-  return fg("Title *",'<input class="becss-form__input" id="pf_title" value="'+esc(p.title||'')+'" placeholder="About Us">')
+  var detailsHtml=fg("Title *",'<input class="becss-form__input" id="pf_title" value="'+esc(p.title||'')+'" placeholder="About Us">')
+    +fg("Excerpt",'<input class="becss-form__input" id="pf_excerpt" value="'+esc(p.excerpt||'')+'" placeholder="Short summary shown on feed cards — leave blank to auto-generate">')
     +fg("Slug",'<input class="becss-form__input" id="pf_slug" value="'+esc(p.slug||'')+'" placeholder="auto from title if blank">')
     +fg("Page Type",'<select class="becss-form__select" id="pf_type">'+typeOptions+'</select>')
     +fg("Category",'<select class="becss-form__select" id="pf_cat">'+catOptions+'</select>')
     +fg("Status",'<select class="becss-form__select" id="pf_status">'+statusOptions+'</select>')
     +fg("Meta Description",'<input class="becss-form__input" id="pf_meta" value="'+esc(p.meta_description||'')+'">')
-    +fg("Content (HTML)",'<textarea class="becss-form__textarea" id="pf_content">'+esc(p.content_html||'')+'</textarea>')
     +fg("Author",'<input class="becss-form__input" id="pf_author" value="'+esc(p.author||'')+'">')
     +fg("Featured Image (image or YouTube link — embeds automatically)",'<div style="display:flex;gap:.4rem">'
       +'<input class="becss-form__input" id="pf_img" value="'+esc(p.featured_image||'')+'" placeholder="/media-files/…">'
-      +'<button type="button" class="becss-btn" style="white-space:nowrap" onclick="openMediaPicker(\'pf_img\')">🖼 Browse…</button></div>');
+      +'<button type="button" class="becss-btn" style="white-space:nowrap" onclick="openMediaPicker(\'pf_img\')">🖼 Browse…</button></div>')
+    +_pageSeoPanel();
+  var contentHtml=fg("Content (HTML)",'<textarea class="becss-form__textarea becss-form__textarea--content" id="pf_content">'+esc(p.content_html||'')+'</textarea>')
+    +_linkAssistantPanel("pf_");
+  return _formTabs([{id:"details",label:"Details",html:detailsHtml},{id:"content",label:"Content",html:contentHtml}]);
 }
-function openAddPage(){ editTarget=null; openModal("Add Page",pageForm({})); }
+function openAddPage(){
+  editTarget=null; openModal("Add Page",pageForm({}));
+  _autosaveRestore("pf_","cms_autosave_page_new"); _autosaveStart("pf_","cms_autosave_page_new");
+}
 function editPage(id){
   var p=_allPages.find(function(x){return x.id===id;});
   if(!p){toast("Not found","err");return;}
   editTarget={type:"page",id:id}; openModal("Edit Page",pageForm(p));
+  _autosaveRestore("pf_","cms_autosave_page_"+id); _autosaveStart("pf_","cms_autosave_page_"+id);
+  _lockAcquire("pages",id,p);
+  _pageSeoLoad(id);
 }
 async function savePageModal(){
   var title=(document.getElementById("pf_title").value||"").trim();
   if(!title){toast("Title required","err");return;}
+  var autosaveKey=editTarget?("cms_autosave_page_"+editTarget.id):"cms_autosave_page_new";
   var body={title:title, slug:(document.getElementById("pf_slug").value||"").trim(),
     page_type:document.getElementById("pf_type").value, category_id_fk:document.getElementById("pf_cat").value||null,
     status:document.getElementById("pf_status").value, meta_description:(document.getElementById("pf_meta").value||"").trim(),
     content_html:document.getElementById("pf_content").value||"", author:(document.getElementById("pf_author").value||"").trim(),
-    featured_image:(document.getElementById("pf_img").value||"").trim()};
+    featured_image:(document.getElementById("pf_img").value||"").trim(),
+    excerpt:(document.getElementById("pf_excerpt").value||"").trim()};
   var d=editTarget?await api("PUT","/api/pages/"+editTarget.id,body):await api("POST","/api/pages",body);
-  if(d.ok){toast(editTarget?"Page updated":"Page added");closeModal();loadPages();}
+  if(d.ok){
+    try{ localStorage.removeItem(autosaveKey); }catch(e){}
+    // FEATURE #16 (2026-09-12): update_page's PUT response has no "id"
+    // field (only {ok:true}) — unlike create_page's POST response,
+    // which does. editTarget.id covers the update branch; d.id covers
+    // the fresh-create branch.
+    var savedPageId=editTarget?editTarget.id:d.id;
+    api("PUT","/api/pages/"+savedPageId+"/seo",_pageSeoCollect()).catch(function(){});
+    toast(editTarget?"Page updated":"Page added");closeModal();loadPages();
+  }
   else toast(d.error||"Error","err");
 }
 async function delPage(id){
   if(!confirm("Delete page?"))return;
   var d=await api("DELETE","/api/pages/"+id);
   if(d.ok){toast("Deleted");loadPages();}else toast(d.error||"Error","err");
+}
+async function duplicatePage(id){
+  var d=await api("POST","/api/pages/"+id+"/duplicate");
+  if(d.ok){toast("Page duplicated");loadPages();}else toast(d.error||"Error","err");
 }
 
 /* ══ POSTS ══════════════════════════════════════════════════ */
@@ -1261,6 +1502,7 @@ async function loadPosts(){
       var catBadge = p.category_id&&catLookup[p.category_id] ? ' · '+esc(catLookup[p.category_id]) : '';
       var tagNames = (p.tag_ids||[]).map(function(tid){return tagLookup[tid];}).filter(Boolean).join(", ");
       var actions = '<button class="becss-card__action-btn becss-card__action-btn--edit" onclick="editPost(\''+p.id+'\')" title="Edit">✎</button>'
+        +'<button class="becss-card__action-btn" onclick="duplicatePost(\''+p.id+'\')" title="Duplicate">⧉</button>'
         +'<button class="becss-card__action-btn becss-card__action-btn--delete" onclick="delPost(\''+p.id+'\')" title="Del">✕</button>';
       return '<div class="becss-link-card">'
         +'<div class="becss-card__actions">'+actions+'</div>'+badge
@@ -1294,14 +1536,14 @@ function postForm(p){
       +'<button type="button" class="becss-btn becss-btn--danger" style="padding:0 .3rem;font-size:.7rem;line-height:1.4"'
       +' title="Delete tag" onclick="deleteTag(\''+t.id+'\')">✕</button></span>';
   }).join('');
-  return fg("Title *",'<input class="becss-form__input" id="pof_title" value="'+esc(p.title||'')+'" placeholder="Post title">')
+  var detailsHtml=fg("Title *",'<input class="becss-form__input" id="pof_title" value="'+esc(p.title||'')+'" placeholder="Post title">')
+    +fg("Excerpt",'<input class="becss-form__input" id="pof_excerpt" value="'+esc(p.excerpt||'')+'" placeholder="Short summary shown on feed cards — leave blank to auto-generate">')
     +fg("Slug",'<input class="becss-form__input" id="pof_slug" value="'+esc(p.slug||'')+'" placeholder="auto from title if blank">')
     +fg("Category",'<select class="becss-form__select" id="pof_cat">'+catOptions+'</select>')
     +fg("Status",'<select class="becss-form__select" id="pof_status" onchange="_toggleScheduleField()">'+statusOptions+'</select>')
     +'<div class="becss-form__group" id="pof_sched_group" style="'+(p.status==="scheduled"?"":"display:none")+'">'
     +'<label class="becss-form__label">Scheduled At</label>'
     +'<input type="datetime-local" class="becss-form__input" id="pof_sched" value="'+esc(_isoToLocalDatetimeInput(p.scheduled_at))+'"></div>'
-    +fg("Content (HTML)",'<textarea class="becss-form__textarea" id="pof_content">'+esc(p.content_html||'')+'</textarea>')
     +fg("Author",'<input class="becss-form__input" id="pof_author" value="'+esc(p.author||'')+'">')
     +fg("Featured Image (image or YouTube link — embeds automatically)",'<div style="display:flex;gap:.4rem">'
       +'<input class="becss-form__input" id="pof_img" value="'+esc(p.featured_image||'')+'" placeholder="/media-files/…">'
@@ -1309,6 +1551,12 @@ function postForm(p){
     +fg("Tags",'<div>'+tagChecks+'</div><div style="margin-top:.35rem;display:flex;gap:.35rem">'
       +'<input class="becss-form__input" id="pof_newtag" placeholder="New tag name">'
       +'<button type="button" class="becss-btn" style="white-space:nowrap" onclick="quickAddTag()">＋ Add</button></div>');
+  return _formTabs([{id:"details",label:"Details",html:detailsHtml},{id:"content",label:"Content",html:_postFormContentHtml(p)}]);
+}
+function _postFormContentHtml(p){
+  p=p||{};
+  return fg("Content (HTML)",'<textarea class="becss-form__textarea becss-form__textarea--content" id="pof_content">'+esc(p.content_html||'')+'</textarea>')
+    +_linkAssistantPanel("pof_");
 }
 function _capturePostFormState(){
   var checkedTagIds = Array.prototype.map.call(document.querySelectorAll(".pf_tag_cb:checked"), function(cb){ return cb.value; });
@@ -1362,29 +1610,43 @@ function _toggleScheduleField(){
   var s=document.getElementById("pof_status").value;
   document.getElementById("pof_sched_group").style.display = s==="scheduled" ? "" : "none";
 }
-function openAddPost(){ editTarget=null; openModal("Add Post",postForm({})); }
+function openAddPost(){
+  editTarget=null; openModal("Add Post",postForm({}));
+  _autosaveRestore("pof_","cms_autosave_post_new"); _autosaveStart("pof_","cms_autosave_post_new");
+}
 function editPost(id){
   var p=_allPosts.find(function(x){return x.id===id;});
   if(!p){toast("Not found","err");return;}
   editTarget={type:"post",id:id}; openModal("Edit Post",postForm(p));
+  _autosaveRestore("pof_","cms_autosave_post_"+id); _autosaveStart("pof_","cms_autosave_post_"+id);
+  _lockAcquire("posts",id,p);
 }
 async function savePostModal(){
   var title=(document.getElementById("pof_title").value||"").trim();
   if(!title){toast("Title required","err");return;}
+  var autosaveKey=editTarget?("cms_autosave_post_"+editTarget.id):"cms_autosave_post_new";
   var tagIds=Array.prototype.map.call(document.querySelectorAll(".pf_tag_cb:checked"),function(cb){return cb.value;});
   var body={title:title, slug:(document.getElementById("pof_slug").value||"").trim(),
     category_id_fk:document.getElementById("pof_cat").value||null, status:document.getElementById("pof_status").value,
     scheduled_at:document.getElementById("pof_sched")?_localDatetimeInputToIso(document.getElementById("pof_sched").value):"",
     content_html:document.getElementById("pof_content").value||"", author:(document.getElementById("pof_author").value||"").trim(),
-    featured_image:(document.getElementById("pof_img").value||"").trim(), tag_ids:tagIds};
+    featured_image:(document.getElementById("pof_img").value||"").trim(), tag_ids:tagIds,
+    excerpt:(document.getElementById("pof_excerpt").value||"").trim()};
   var d=editTarget?await api("PUT","/api/posts/"+editTarget.id,body):await api("POST","/api/posts",body);
-  if(d.ok){toast(editTarget?"Post updated":"Post added");closeModal();loadPosts();}
+  if(d.ok){
+    try{ localStorage.removeItem(autosaveKey); }catch(e){}
+    toast(editTarget?"Post updated":"Post added");closeModal();loadPosts();
+  }
   else toast(d.error||"Error","err");
 }
 async function delPost(id){
   if(!confirm("Delete post?"))return;
   var d=await api("DELETE","/api/posts/"+id);
   if(d.ok){toast("Deleted");loadPosts();}else toast(d.error||"Error","err");
+}
+async function duplicatePost(id){
+  var d=await api("POST","/api/posts/"+id+"/duplicate");
+  if(d.ok){toast("Post duplicated");loadPosts();}else toast(d.error||"Error","err");
 }
 async function quickPublishPost(id){
   var d=await api("POST","/api/posts/"+id+"/publish");
@@ -1845,7 +2107,7 @@ function _renderMediaPickerGrid(){
     // selectMediaItem('...'). That's the same latent risk every other
     // onclick="fn('"+esc(x)+"')" call site in this file already carries —
     // already documented as an open, file-wide issue in
-    // docs/security-notes.md, with the real fix being the CHECKLIST 1b
+    // dev/security-notes.md, with the real fix being the CHECKLIST 1b
     // addEventListener+dataset migration. This brings selectUrl to parity
     // with its neighbors rather than being uniquely worse than them.
     return '<div class="becss-mediapicker__item" onclick="selectMediaItem(\''+esc(selectUrl)+'\')" title="'+esc(m.filename)+'">'
@@ -1899,6 +2161,35 @@ async function _mediaPickerUploadAndSelect(){
 }
 document.getElementById("mediaPickerOv").addEventListener("click", function(e){ if(e.target===this) closeMediaPicker(); });
 
+/* FEATURE #15 (2026-09-12): content import (.md/.html file upload) for
+   Pages/Posts. Same fetch/FormData/X-Admin-Token convention as
+   _mediaPickerUploadAndSelect() above. One shared hidden <input
+   type="file"> (id="importFileInput", next to the toolbar in the page
+   layout) rather than one per panel — triggerImport() just records
+   which endpoint the next file goes to before opening the picker. */
+var _importKind=null;
+function triggerImport(kind){
+  _importKind=kind;
+  var input=document.getElementById("importFileInput");
+  input.value="";
+  input.click();
+}
+async function _doImport(){
+  var input=document.getElementById("importFileInput");
+  var file=input.files && input.files[0];
+  if(!file || !_importKind) return;
+  var fd=new FormData();
+  fd.append("file",file);
+  var resp=await fetch("/api/"+_importKind+"/import", {method:"POST", headers:{"X-Admin-Token":ADMIN_TOKEN}, body:fd});
+  var d=await resp.json();
+  if(d.ok){
+    toast((_importKind==="pages"?"Page":"Post")+" imported as draft");
+    if(_importKind==="pages") loadPages(); else loadPosts();
+  } else {
+    toast(d.error||"Import failed","err");
+  }
+}
+
 /* ══ FACTORY RESET (Settings → Danger Zone) ════════════════════
    A dedicated confirm-tab flow, not the standard add/edit form: the
    modal's Save button starts disabled and only enables once the user
@@ -1940,6 +2231,32 @@ async function confirmFactoryReset(){
 function fg(label,input){ return '<div class="becss-form__group"><label class="becss-form__label">'+label+'</label>'+input+'</div>'; }
 function empty(icon,msg){ return '<div class="becss-empty-state"><div class="becss-empty-state__icon">'+icon+'</div>'+msg+'</div>'; }
 
+/* REUSABLE FORM TABS: any form builder (pageForm/postForm/etc.) can
+   call _formTabs([{id,label,html}, ...]) to split a long form across
+   tabs instead of one long scroll — used first for the page/post
+   editors' Details/Content split, but generic over any tab set and
+   any number of tabs, so any other editor can adopt it later without
+   a new helper. Scoped to "#modalBody .becss-form-tab..." since
+   #modalBody is always the current editor's own root — safe even
+   though only one editor is ever open at a time. */
+function _formTabs(tabs){
+  var nav=tabs.map(function(t,i){
+    return '<button type="button" class="becss-form-tab'+(i===0?' becss-form-tab--active':'')+'" data-tab="'+t.id+'" onclick="_switchFormTab(\''+t.id+'\')">'+esc(t.label)+'</button>';
+  }).join('');
+  var panels=tabs.map(function(t,i){
+    return '<div class="becss-form-tabpanel" data-tabpanel="'+t.id+'" style="'+(i===0?'':'display:none')+'">'+t.html+'</div>';
+  }).join('');
+  return '<div class="becss-form-tabs">'+nav+'</div>'+panels;
+}
+function _switchFormTab(id){
+  document.querySelectorAll('#modalBody .becss-form-tab').forEach(function(b){
+    b.classList.toggle('becss-form-tab--active', b.getAttribute('data-tab')===id);
+  });
+  document.querySelectorAll('#modalBody .becss-form-tabpanel').forEach(function(p){
+    p.style.display=(p.getAttribute('data-tabpanel')===id)?'':'none';
+  });
+}
+
 /* ══ KEYBOARD ═══════════════════════════════════════════════ */
 document.addEventListener("keydown",function(e){
   if(e.key==="Escape"){ closeModal(); closeCatMgr(); closeMediaPicker(); closePreview(); }
@@ -1954,7 +2271,7 @@ document.addEventListener("DOMContentLoaded",function(){
   // a token — either from sessionStorage (returning session) or freshly
   // entered via the login gate.
   if (ADMIN_TOKEN){
-    renderToolbar("links"); loadLinks();
+    renderToolbar("pages"); loadPages();
   } else {
     _showLoginGate();
   }

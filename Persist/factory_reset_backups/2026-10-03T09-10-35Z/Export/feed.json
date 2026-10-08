@@ -1,0 +1,21 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Management CMS",
+  "description": "Developer Page",
+  "home_page_url": "",
+  "feed_url": "/feed.json",
+  "language": "en",
+  "items": [
+    {
+      "id": "Test-Blog-Post",
+      "url": "/post/Test-Blog-Post.html",
+      "title": "Test Blog Post",
+      "content_html": "<h2>Post Title Test</h2>\n\n<p>Test blog post...</p>\n<p>Test blog post p2...</p>\n<p>Test blog post, paragraph three, for pagination/layout testing.</p>",
+      "date_published": "2026-07-31T11:49:58Z",
+      "date_modified": "2026-08-21T09:12:43Z",
+      "author": {
+        "name": "Boehnenelton2024"
+      }
+    }
+  ]
+}

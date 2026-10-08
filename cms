@@ -37,6 +37,25 @@ if _MGMT_DIR not in sys.path:
 from lib_bejson_Management_cli import ManagementCLIProject
 
 
+def _read_project_version(root: str) -> str:
+    """
+    REMEDIATION (2026-09-21, policy S4.7 standard CLI flags): read
+    directly from bejson_project.json's own Project_Version rather than
+    hardcoding a version string here that would drift out of sync with
+    every future package delivery — same reasoning as app.py's
+    /api/about route.
+    """
+    try:
+        tracker_path = os.path.join(os.path.abspath(root), "bejson_project.json")
+        with open(tracker_path, encoding="utf-8") as f:
+            tracker = _json.load(f)
+        fields = [x["name"] for x in tracker["Fields"]]
+        row = tracker["Values"][0]
+        return row[fields.index("Project_Version")]
+    except Exception:
+        return "unknown"
+
+
 def _get_project(ctx) -> ManagementCLIProject:
     return ManagementCLIProject(ctx.obj["root"])
 
@@ -63,6 +82,7 @@ def _out(ctx, data):
 
 
 @click.group()
+@click.version_option(version=_read_project_version(_THIS_DIR), prog_name="cms")
 @click.option("--root", "-r", default=".", envvar="CMS_ROOT", help="Project root directory.")
 @click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
 @click.pass_context
@@ -84,6 +104,96 @@ def init(path, site_name):
         sys.exit(1)
     project.init_project(site_name)
     click.echo(f"Initialized '{site_name}' at {os.path.abspath(path)}")
+
+
+@cli.command()
+@click.pass_context
+def config(ctx):
+    """Print the current config.json settings and exit (policy S4.7)."""
+    import lib_bejson_Management_config as Config
+    root = os.path.abspath(ctx.obj["root"])
+    _check_exists(_get_project(ctx))
+    settings = Config.management_config_get_settings_list(root)
+    _out(ctx, {s["setting_name"]: s["setting_value"] for s in settings})
+
+
+@cli.command()
+@click.pass_context
+def register(ctx):
+    """
+    Register this project with the master project index (policy S4.7 /
+    S4.6). Requires PROJECT_INDEX_ROOT in the environment — never
+    hardcoded, per policy S4.5. This CLI does not assign a Project_GUID
+    itself (policy S4.6/S7.3: that's the registration tool's job alone);
+    it only invokes it with the exact command policy S4.7 documents.
+    """
+    root = os.path.abspath(ctx.obj["root"])
+    project_index_root = os.environ.get("PROJECT_INDEX_ROOT")
+    if not project_index_root:
+        click.echo("PROJECT_INDEX_ROOT is not set in the environment — cannot register.", err=True)
+        sys.exit(1)
+    register_script = os.path.join(project_index_root, "cli_project_register.py")
+    if not os.path.exists(register_script):
+        click.echo(f"Registration tool not found at {register_script}", err=True)
+        sys.exit(1)
+    import subprocess
+    result = subprocess.run([sys.executable, register_script, "--register", root])
+    sys.exit(result.returncode)
+
+
+@cli.command()
+@click.option("--yes", is_flag=True, help="Skip the confirmation prompt.")
+@click.pass_context
+def reset(ctx, yes):
+    """
+    Factory-reset this project (policy S4.7 / S10.7: one factory-reset
+    routine per project, called by every entry point). The only actual
+    implementation lives in app.py's _factory_reset() — it depends on
+    _ensure_cms_components_registered(), a large inline-template
+    function not worth duplicating or relocating for a CLI convenience
+    flag, especially for a destructive operation where a relocation bug
+    would be costly. Rather than reimplement it here, this calls the
+    exact same routine through the running web app's own
+    /api/factory-reset endpoint — one implementation, two entry points,
+    zero duplicated logic. Requires the web app to be running and an
+    admin_token.txt already generated (i.e. started at least once).
+    """
+    import lib_bejson_Management_config as Config
+    root = os.path.abspath(ctx.obj["root"])
+    _check_exists(_get_project(ctx))
+    if not yes and not click.confirm(
+        "This wipes all Pages, Posts, Categories, Nav, Media, Notes, Tasks, "
+        "Links, and Settings back to factory defaults. Everything is backed "
+        "up first, nothing is permanently destroyed. Continue?"
+    ):
+        click.echo("Aborted.")
+        return
+    token_file = os.path.join(root, "config", "admin_token.txt")
+    if not os.path.exists(token_file):
+        click.echo("No config/admin_token.txt found — start the web app once first so it can generate one.", err=True)
+        sys.exit(1)
+    with open(token_file, encoding="utf-8") as f:
+        token = f.read().strip()
+    cfg = Config.management_config_load(root)
+    port = cfg.get("port", 5030)
+    url = f"http://127.0.0.1:{port}/api/factory-reset"
+    import urllib.request
+    import urllib.error
+    body = _json.dumps({"confirm": "RESET"}).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=body, method="POST",
+        headers={"Content-Type": "application/json", "X-Admin-Token": token},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            result = _json.loads(resp.read().decode("utf-8"))
+    except urllib.error.URLError as e:
+        click.echo(f"Could not reach the running app at {url} — is it running? ({e})", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Reset failed: {e}", err=True)
+        sys.exit(1)
+    click.echo("Factory reset complete. Backed up to: " + str(result.get("backed_up_to", "?")))
 
 
 @cli.group()

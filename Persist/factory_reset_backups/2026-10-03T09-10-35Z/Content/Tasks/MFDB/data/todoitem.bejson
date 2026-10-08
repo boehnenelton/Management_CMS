@@ -1,0 +1,64 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "TodoItem"
+  ],
+  "Fields": [
+    {
+      "name": "taxonomy",
+      "type": "string"
+    },
+    {
+      "name": "type",
+      "type": "string"
+    },
+    {
+      "name": "category",
+      "type": "string"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "label",
+      "type": "string"
+    },
+    {
+      "name": "idx_position",
+      "type": "integer"
+    },
+    {
+      "name": "idx_sorting",
+      "type": "string"
+    },
+    {
+      "name": "active",
+      "type": "boolean"
+    },
+    {
+      "name": "hidden",
+      "type": "boolean"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    },
+    {
+      "name": "done",
+      "type": "boolean"
+    },
+    {
+      "name": "priority",
+      "type": "string"
+    },
+    {
+      "name": "detail",
+      "type": "string"
+    }
+  ],
+  "Values": []
+}

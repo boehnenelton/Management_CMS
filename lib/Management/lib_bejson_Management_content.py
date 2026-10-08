@@ -90,6 +90,23 @@ PAGE_FIELDS = [
     # so old pages just come back without a "title" key until next saved,
     # which page_to_dict()'s .get("title", "") default already handles.
     {"name": "title",              "type": "string"},
+    # FEATURE #6 (2026-09-12): explicit excerpt override for feed cards
+    # and OG description — see management_cms_shared_excerpt()'s new
+    # explicit_excerpt param. Appended at the END per the "title" fix's
+    # own convention above (old on-disk rows come back without this key
+    # via .get("excerpt", "") until next save, rather than corrupting
+    # positional BEJSON rows already on disk).
+    {"name": "excerpt",            "type": "string"},
+    # FEATURE #5 (2026-09-12): soft edit-lock. Advisory only — this is a
+    # single-token solo-admin tool (one shared secret, no per-user
+    # identity), so "locked_by" holds a random per-BROWSER-TAB session id
+    # (see templates/index.html's _lockSessionId()), not a user account.
+    # It distinguishes "someone else has this open in another tab" from
+    # "you have it open here", which is the only distinction a
+    # single-token tool can actually make. Never blocks a save — see
+    # editPage()/editPost()'s warning-toast comment.
+    {"name": "locked_at",          "type": "string"},
+    {"name": "locked_by",          "type": "string"},
 ]
 
 PAGE_SEO_FIELDS = [
@@ -125,6 +142,12 @@ POST_FIELDS = [
     {"name": "tag_ids",          "type": "array"},
     {"name": "created_at",       "type": "string"},
     {"name": "updated_at",       "type": "string"},
+    # FEATURE #6 (2026-09-12): see PAGE_FIELDS' matching entry above.
+    {"name": "excerpt",          "type": "string"},
+    # FEATURE #5 (2026-09-12): soft edit-lock — advisory only (see the
+    # matching PAGE_FIELDS entry above for the full rationale).
+    {"name": "locked_at",        "type": "string"},
+    {"name": "locked_by",        "type": "string"},
 ]
 
 PAGE_STATUSES = ("draft", "published", "archived")
@@ -168,7 +191,7 @@ def management_cms_content_create_page(manifest_path: str, title: str, slug: str
                                         author: str = "", featured_image: str = "",
                                         parent_page_id_fk: Optional[str] = None, sort_order: int = 0,
                                         status: str = "draft", content_html: str = "",
-                                        content_markdown: str = "") -> str:
+                                        content_markdown: str = "", excerpt: str = "") -> str:
     """
     page_type: must match a key in lib_bejson_Management_taxonomy.PAGE_TYPES
     (e.g. "home", "landing", "content", "blog_index", ...), per Directive 3.
@@ -192,6 +215,7 @@ def management_cms_content_create_page(manifest_path: str, title: str, slug: str
         "content_html": content_html, "content_markdown": content_markdown, "author": author,
         "featured_image": featured_image, "parent_page_id_fk": parent_page_id_fk,
         "sort_order": sort_order, "created_at": now, "updated_at": now, "title": title,
+        "excerpt": excerpt,
     })
     if content_html:
         _write_content_file(manifest_path, "pages", resolved_slug, content_html)
@@ -312,7 +336,7 @@ def management_cms_content_create_post(manifest_path: str, title: str, slug: str
                                         tag_ids: Optional[list] = None,
                                         author: str = "", featured_image: str = "",
                                         status: str = "draft", content_html: str = "",
-                                        content_markdown: str = "",
+                                        content_markdown: str = "", excerpt: str = "",
                                         scheduled_at: str = "") -> str:
     resolved_slug = slug or management_cms_shared_slugify(title)
     now = management_cms_shared_now_iso()
@@ -325,7 +349,7 @@ def management_cms_content_create_post(manifest_path: str, title: str, slug: str
         "status": status, "content_html": content_html, "content_markdown": content_markdown,
         "author": author, "featured_image": featured_image,
         "published_at": now if status == "published" else "", "scheduled_at": scheduled_at,
-        "tag_ids": tag_ids or [], "created_at": now, "updated_at": now,
+        "tag_ids": tag_ids or [], "created_at": now, "updated_at": now, "excerpt": excerpt,
     })
     if content_html:
         _write_content_file(manifest_path, "posts", resolved_slug, content_html)

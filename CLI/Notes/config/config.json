@@ -1,0 +1,17 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104a",
+  "Format_Creator": "Elton Boehnen",
+  "Records_Type": ["ScriptConfig"],
+  "Fields": [
+    {"name": "setting_name",  "type": "string"},
+    {"name": "setting_value", "type": "any"},
+    {"name": "description",   "type": "string"}
+  ],
+  "Values": [
+    ["lib_management_dir", "../../lib/Management", "Path to lib/Management, relative to this script's own directory (SCRIPT_PATH) — never hardcoded absolute."],
+    ["lib_core_dir",        "../../lib/Core",       "Path to lib/Core, relative to SCRIPT_PATH."],
+    ["project_root_dir",    "../..",                "Path to the Management_CMS project root (where 104a.mfdb.bejson and Content/ live), relative to SCRIPT_PATH. site_cli.py points here too by default — both tools share one project, same as app.py's single Content/ tree."],
+    ["log_level",           "WARNING",              "Python logging module threshold for this tool's own diagnostics (stderr only — the interactive menu's own output always goes through print(), never logging)."]
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "PageSeo"
+  ],
+  "Fields": [
+    {
+      "name": "seo_id",
+      "type": "string"
+    },
+    {
+      "name": "page_id_fk",
+      "type": "string"
+    },
+    {
+      "name": "meta_title",
+      "type": "string"
+    },
+    {
+      "name": "meta_keywords",
+      "type": "string"
+    },
+    {
+      "name": "og_title",
+      "type": "string"
+    },
+    {
+      "name": "og_description",
+      "type": "string"
+    },
+    {
+      "name": "og_image",
+      "type": "string"
+    },
+    {
+      "name": "canonical_url",
+      "type": "string"
+    },
+    {
+      "name": "robots_directive",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    }
+  ],
+  "Values": []
+}

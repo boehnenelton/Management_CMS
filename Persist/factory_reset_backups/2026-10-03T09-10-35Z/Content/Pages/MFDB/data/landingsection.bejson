@@ -1,0 +1,36 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104",
+  "Format_Creator": "Elton Boehnen",
+  "Parent_Hierarchy": "../104a.mfdb.bejson",
+  "Records_Type": [
+    "LandingSection"
+  ],
+  "Fields": [
+    {
+      "name": "section_id",
+      "type": "string"
+    },
+    {
+      "name": "page_id_fk",
+      "type": "string"
+    },
+    {
+      "name": "section_type",
+      "type": "string"
+    },
+    {
+      "name": "section_data",
+      "type": "string"
+    },
+    {
+      "name": "idx_position",
+      "type": "integer"
+    },
+    {
+      "name": "created_at",
+      "type": "string"
+    }
+  ],
+  "Values": []
+}

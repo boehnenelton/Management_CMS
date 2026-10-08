@@ -302,17 +302,27 @@ def management_cms_shared_inject_toc(content_html: str, min_headings: int = 2):
     return content_with_ids, toc_html
 
 
-def management_cms_shared_excerpt(html_content: str, max_chars: int = 160) -> str:
+def management_cms_shared_excerpt(html_content: str, max_chars: int = 160, explicit_excerpt: str = "") -> str:
     """
     Strips tags from content_html and truncates to a clean word boundary —
-    there's no dedicated excerpt field on Post/Page, so feed cards need
-    something short to show instead of dumping full content_html into a
-    list item. Added 2026-07-22 as part of building shared feed-card
+    fallback for feed cards when no explicit excerpt is set, so a feed
+    card has something short to show instead of dumping full content_html
+    into a list item. Added 2026-07-22 as part of building shared feed-card
     rendering (see management_cms_shared_render_feed_card()/_render_feed())
     for the homepage recent-posts feed, category archives, and tag
     archives — all requested to be built off the same base rather than
     each having its own bespoke bare <li><a> list.
+
+    FEATURE #6 (2026-09-12): Page/Post now carry an optional explicit
+    `excerpt` field (see PAGE_FIELDS/POST_FIELDS). If the caller supplies
+    a non-empty explicit_excerpt, it wins outright — no truncation, no
+    stripping — since an author-written excerpt is presumed already
+    clean and already the right length. Falls back to the strip/truncate
+    logic below only when explicit_excerpt is empty, preserving existing
+    behavior for every entity that hasn't set one.
     """
+    if explicit_excerpt:
+        return explicit_excerpt
     text = re.sub(r"<[^>]+>", " ", html_content or "")
     text = re.sub(r"\s+", " ", text).strip()
     if len(text) <= max_chars:
